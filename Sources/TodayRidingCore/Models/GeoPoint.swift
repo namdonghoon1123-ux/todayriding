@@ -1,6 +1,6 @@
 import Foundation
 
-public struct GeoPoint: Equatable, Sendable {
+public struct GeoPoint: Codable, Equatable, Sendable {
     public let latitude: Double
     public let longitude: Double
 
@@ -9,4 +9,3 @@ public struct GeoPoint: Equatable, Sendable {
         self.longitude = longitude
     }
 }
-

@@ -17,7 +17,7 @@ final class RideTrackingViewModel: ObservableObject {
         weather: WeatherSnapshot?,
         airQuality: AirQualitySnapshot?,
         tracker: RideTracker = RideTracker(),
-        localStore: LocalRideStore = InMemoryRideStore()
+        localStore: LocalRideStore = AppLocalRideStoreFactory.make()
     ) {
         self.tracker = tracker
         self.localStore = localStore
@@ -104,5 +104,22 @@ final class RideTrackingViewModel: ObservableObject {
                 try? await localStore.saveRide(updatedRide)
             }
         }
+    }
+}
+
+private enum AppLocalRideStoreFactory {
+    static func make() -> LocalRideStore {
+        guard let applicationSupportURL = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
+            return InMemoryRideStore()
+        }
+
+        return FileRideStore(
+            directoryURL: applicationSupportURL
+                .appendingPathComponent("TodayRiding", isDirectory: true)
+                .appendingPathComponent("Rides", isDirectory: true)
+        )
     }
 }

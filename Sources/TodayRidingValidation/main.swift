@@ -107,8 +107,39 @@ func validateRideTracker() {
     assert(finished?.endedAt != nil, "Finished ride should have endedAt")
 }
 
+func validateFileRideStore() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("todayriding-validation-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = FileRideStore(directoryURL: directory)
+    let ride = Ride(
+        startedAt: Date(timeIntervalSince1970: 2_000),
+        distanceMeters: 1234,
+        syncStatus: .pending
+    )
+    let point = RidePoint(
+        rideID: ride.id,
+        recordedAt: ride.startedAt,
+        coordinate: GeoPoint(latitude: 37.5445, longitude: 127.0557),
+        sequence: 0
+    )
+
+    try await store.saveRide(ride)
+    try await store.appendPoint(point)
+
+    let pendingRides = try await store.loadPendingRides()
+    let loadedPoints = try await store.loadPoints(for: ride.id)
+
+    assert(pendingRides.map(\.id).contains(ride.id), "FileRideStore should load pending rides")
+    assert(loadedPoints == [point], "FileRideStore should persist ride points")
+}
+
 validateDistanceCalculator()
 validateRidingScoreCalculator()
 validateRideTracker()
+try await validateFileRideStore()
 
 print("TodayRidingValidation passed")

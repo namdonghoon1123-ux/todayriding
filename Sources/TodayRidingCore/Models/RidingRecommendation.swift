@@ -1,6 +1,6 @@
 import Foundation
 
-public struct RidingRecommendation: Equatable, Sendable {
+public struct RidingRecommendation: Codable, Equatable, Sendable {
     public let score: Int
     public let grade: RidingScoreGrade
     public let message: String
@@ -14,7 +14,7 @@ public struct RidingRecommendation: Equatable, Sendable {
     }
 }
 
-public enum RidingScoreGrade: String, Sendable {
+public enum RidingScoreGrade: String, Codable, Sendable {
     case excellent
     case good
     case caution
@@ -36,4 +36,3 @@ public enum RidingScoreGrade: String, Sendable {
         }
     }
 }
-

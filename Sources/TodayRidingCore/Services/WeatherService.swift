@@ -4,6 +4,19 @@ public protocol WeatherService: Sendable {
     func currentWeather() async throws -> WeatherSnapshot
 }
 
+public struct KMAWeatherService: WeatherService {
+    private let apiKey: String
+
+    public init(apiKey: String) {
+        self.apiKey = apiKey
+    }
+
+    public func currentWeather() async throws -> WeatherSnapshot {
+        _ = apiKey
+        throw RemoteServiceError.notImplemented("KMAWeatherService requires KMA grid conversion and endpoint mapping.")
+    }
+}
+
 public struct MockWeatherService: WeatherService {
     public init() {}
 
@@ -28,3 +41,7 @@ public struct MockWeatherService: WeatherService {
     }
 }
 
+public enum RemoteServiceError: Error, Sendable {
+    case notImplemented(String)
+    case notConfigured(String)
+}

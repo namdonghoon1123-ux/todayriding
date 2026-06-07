@@ -344,6 +344,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "오늘탈까";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "공유 카드를 사진 앱에 저장하기 위해 권한이 필요합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "라이딩 경로와 거리 기록을 위해 위치 정보가 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -372,6 +373,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "오늘탈까";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "공유 카드를 사진 앱에 저장하기 위해 권한이 필요합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "라이딩 경로와 거리 기록을 위해 위치 정보가 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -431,4 +433,3 @@
 	};
 	rootObject = AA0006010000000000000001 /* Project object */;
 }
-

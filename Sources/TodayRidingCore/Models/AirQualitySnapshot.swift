@@ -1,6 +1,6 @@
 import Foundation
 
-public struct AirQualitySnapshot: Equatable, Sendable {
+public struct AirQualitySnapshot: Codable, Equatable, Sendable {
     public let pm10: Int
     public let pm25: Int
     public let stationName: String
@@ -27,10 +27,9 @@ public struct AirQualitySnapshot: Equatable, Sendable {
     }
 }
 
-public enum AirQualityGrade: String, Sendable {
+public enum AirQualityGrade: String, Codable, Sendable {
     case good
     case normal
     case bad
     case veryBad
 }
-

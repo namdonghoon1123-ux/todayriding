@@ -1,6 +1,6 @@
 import Foundation
 
-public struct RideSummary: Equatable, Sendable {
+public struct RideSummary: Codable, Equatable, Sendable {
     public let ride: Ride
     public let points: [RidePoint]
 
@@ -9,4 +9,3 @@ public struct RideSummary: Equatable, Sendable {
         self.points = points
     }
 }
-

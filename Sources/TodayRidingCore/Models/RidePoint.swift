@@ -1,6 +1,6 @@
 import Foundation
 
-public struct RidePoint: Identifiable, Equatable, Sendable {
+public struct RidePoint: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
     public let rideID: UUID
     public let recordedAt: Date
@@ -30,4 +30,3 @@ public struct RidePoint: Identifiable, Equatable, Sendable {
         self.sequence = sequence
     }
 }
-

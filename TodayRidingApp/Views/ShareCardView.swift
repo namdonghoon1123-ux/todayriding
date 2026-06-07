@@ -1,8 +1,11 @@
 import SwiftUI
 import TodayRidingCore
+import UIKit
 
 struct ShareCardView: View {
     @StateObject private var viewModel: ShareCardViewModel
+    @State private var isShowingShareSheet = false
+    @State private var statusMessage: String?
     let onClose: () -> Void
 
     init(summary: RideSummary, onClose: @escaping () -> Void) {
@@ -14,20 +17,51 @@ struct ShareCardView: View {
         VStack(spacing: 16) {
             header
 
-            card
+            ShareCardContent(summary: viewModel.summary)
                 .aspectRatio(9 / 16, contentMode: .fit)
                 .padding(.horizontal, 24)
 
             HStack(spacing: 14) {
-                shareAction(icon: "photo", title: "사진 저장")
-                shareAction(icon: "message.fill", title: "메시지")
-                shareAction(icon: "square.and.arrow.up", title: "더보기")
+                shareAction(icon: "photo", title: "사진 저장") {
+                    statusMessage = viewModel.saveRenderedImageToPhotos()
+                }
+                shareAction(icon: "message.fill", title: "메시지") {
+                    viewModel.renderCardImage()
+                    isShowingShareSheet = viewModel.renderedImage != nil
+                }
+                shareAction(icon: "square.and.arrow.up", title: "더보기") {
+                    viewModel.renderCardImage()
+                    isShowingShareSheet = viewModel.renderedImage != nil
+                }
             }
             .padding(.horizontal, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.top, 18)
         .background(AppTheme.background.ignoresSafeArea())
+        .onAppear {
+            viewModel.renderCardImage()
+        }
+        .sheet(isPresented: $isShowingShareSheet) {
+            if let image = viewModel.renderedImage {
+                ActivityView(activityItems: [image])
+            }
+        }
+        .alert(
+            "오늘탈까",
+            isPresented: Binding(
+                get: { statusMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        statusMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text(statusMessage ?? "")
+        }
     }
 
     private var header: some View {
@@ -47,7 +81,9 @@ struct ShareCardView: View {
 
             Spacer()
 
-            Button(action: {}) {
+            Button {
+                statusMessage = viewModel.saveRenderedImageToPhotos()
+            } label: {
                 Image(systemName: "square.and.arrow.down")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(AppTheme.brand)
@@ -57,17 +93,39 @@ struct ShareCardView: View {
         .padding(.horizontal, 12)
     }
 
-    private var card: some View {
+    private func shareAction(icon: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 54, height: 54)
+                    .background(AppTheme.surface2, in: RoundedRectangle(cornerRadius: 16))
+
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct ShareCardContent: View {
+    let summary: RideSummary
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            RoutePreview(points: viewModel.summary.points)
+            RoutePreview(points: summary.points)
                 .frame(height: 230)
 
-            Text(AppFormatters.date(viewModel.summary.ride.startedAt))
+            Text(AppFormatters.date(summary.ride.startedAt))
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(AppTheme.brand)
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(AppFormatters.distanceKm(viewModel.summary.ride.distanceMeters))
+                Text(AppFormatters.distanceKm(summary.ride.distanceMeters))
                     .font(.system(size: 56, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 Text("km")
@@ -75,19 +133,19 @@ struct ShareCardView: View {
                     .foregroundStyle(AppTheme.textTertiary)
             }
 
-            Text(viewModel.summary.ride.title ?? "오늘 라이딩")
+            Text(summary.ride.title ?? "오늘 라이딩")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(AppTheme.textTertiary)
 
             Divider().overlay(AppTheme.hairline)
 
             HStack {
-                cardStat(AppFormatters.duration(viewModel.summary.ride.durationSeconds), "시간")
-                cardStat("\(AppFormatters.speedKmh(viewModel.summary.ride.averageSpeedKmh)) km/h", "평균")
-                cardStat("\(AppFormatters.speedKmh(viewModel.summary.ride.maxSpeedKmh)) km/h", "최고")
+                cardStat(AppFormatters.duration(summary.ride.durationSeconds), "시간")
+                cardStat("\(AppFormatters.speedKmh(summary.ride.averageSpeedKmh)) km/h", "평균")
+                cardStat("\(AppFormatters.speedKmh(summary.ride.maxSpeedKmh)) km/h", "최고")
             }
 
-            Text(cardSummaryText)
+            Text(summaryText)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(AppTheme.textSecondary)
                 .lineLimit(2)
@@ -116,10 +174,10 @@ struct ShareCardView: View {
         )
     }
 
-    private var cardSummaryText: String {
-        let weather = viewModel.summary.ride.weatherSnapshot.map { "\(Int($0.temperatureCelsius))도 \($0.skyCondition)" } ?? "날씨 기록 없음"
-        let air = viewModel.summary.ride.airQualitySnapshot.map { "PM2.5 \($0.pm25)" } ?? "미세먼지 기록 없음"
-        let memo = viewModel.summary.ride.memo.isEmpty ? "" : " · \(viewModel.summary.ride.memo)"
+    private var summaryText: String {
+        let weather = summary.ride.weatherSnapshot.map { "\(Int($0.temperatureCelsius))도 \($0.skyCondition)" } ?? "날씨 기록 없음"
+        let air = summary.ride.airQualitySnapshot.map { "PM2.5 \($0.pm25)" } ?? "미세먼지 기록 없음"
+        let memo = summary.ride.memo.isEmpty ? "" : " · \(summary.ride.memo)"
         return "\(weather) · \(air)\(memo)"
     }
 
@@ -135,20 +193,17 @@ struct ShareCardView: View {
         }
         .frame(maxWidth: .infinity)
     }
-
-    private func shareAction(icon: String, title: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 54, height: 54)
-                .background(AppTheme.surface2, in: RoundedRectangle(cornerRadius: 16))
-
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AppTheme.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-    }
 }
 
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
+        _ = uiViewController
+        _ = context
+    }
+}

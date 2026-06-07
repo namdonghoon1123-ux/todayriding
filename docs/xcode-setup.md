@@ -39,11 +39,14 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 ## 권한 설정
 
-Xcode 프로젝트는 generated Info.plist를 사용하며 위치 권한 문구를 빌드 설정에 넣어두었다.
+Xcode 프로젝트는 generated Info.plist를 사용하며 위치/사진 저장 권한 문구를 빌드 설정에 넣어두었다.
 
 ```text
 Privacy - Location When In Use Usage Description
 라이딩 경로와 거리 기록을 위해 위치 정보가 필요합니다.
+
+Privacy - Photo Library Additions Usage Description
+공유 카드를 사진 앱에 저장하기 위해 권한이 필요합니다.
 ```
 
 ## 터미널 검증

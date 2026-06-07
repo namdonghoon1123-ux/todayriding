@@ -1,6 +1,6 @@
 import Foundation
 
-public struct WeatherSnapshot: Equatable, Sendable {
+public struct WeatherSnapshot: Codable, Equatable, Sendable {
     public let observedAt: Date
     public let locationName: String
     public let temperatureCelsius: Double
@@ -43,7 +43,7 @@ public struct WeatherSnapshot: Equatable, Sendable {
     }
 }
 
-public enum PrecipitationType: String, Sendable {
+public enum PrecipitationType: String, Codable, Sendable {
     case none
     case rain
     case rainAndSnow
@@ -65,4 +65,3 @@ public enum PrecipitationType: String, Sendable {
         }
     }
 }
-

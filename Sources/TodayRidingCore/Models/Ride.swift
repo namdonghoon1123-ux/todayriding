@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Ride: Identifiable, Equatable, Sendable {
+public struct Ride: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
     public var title: String?
     public let startedAt: Date
@@ -52,10 +52,9 @@ public struct Ride: Identifiable, Equatable, Sendable {
     }
 }
 
-public enum RideSyncStatus: String, Sendable {
+public enum RideSyncStatus: String, Codable, Sendable {
     case localOnly
     case pending
     case synced
     case failed
 }
-
