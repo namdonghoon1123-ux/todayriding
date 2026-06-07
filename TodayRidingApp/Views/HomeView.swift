@@ -4,6 +4,7 @@ import TodayRidingCore
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     let onStartRide: () -> Void
+    let onShowHistory: () -> Void
 
     var body: some View {
         ScrollView {
@@ -49,6 +50,15 @@ struct HomeView: View {
                 .tint(AppTheme.brand)
 
             Spacer()
+
+            Button(action: onShowHistory) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(AppTheme.brand)
+                    .frame(width: 40, height: 40)
+                    .background(AppTheme.surface2, in: Circle())
+            }
+            .accessibilityLabel("기록 보기")
 
             Text(AppFormatters.date(Date()))
                 .font(.system(size: 13, weight: .semibold))
@@ -148,4 +158,3 @@ struct HomeView: View {
         }
     }
 }
-

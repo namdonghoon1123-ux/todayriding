@@ -25,6 +25,9 @@
 		AA0000010000000000000010 /* RoutePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000010 /* RoutePreview.swift */; };
 		AA0000010000000000000011 /* StatBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000011 /* StatBlock.swift */; };
 		AA0000010000000000000012 /* TodayRidingCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA0005010000000000000001 /* TodayRidingCore */; };
+		AA0000010000000000000013 /* AppLocalRideStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000013 /* AppLocalRideStoreFactory.swift */; };
+		AA0000010000000000000014 /* RideHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000014 /* RideHistoryViewModel.swift */; };
+		AA0000010000000000000015 /* RideHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001010000000000000015 /* RideHistoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +49,9 @@
 		AA0001010000000000000010 /* RoutePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePreview.swift; sourceTree = "<group>"; };
 		AA0001010000000000000011 /* StatBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatBlock.swift; sourceTree = "<group>"; };
 		AA0001010000000000000012 /* TodayRiding.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TodayRiding.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0001010000000000000013 /* AppLocalRideStoreFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocalRideStoreFactory.swift; sourceTree = "<group>"; };
+		AA0001010000000000000014 /* RideHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RideHistoryViewModel.swift; sourceTree = "<group>"; };
+		AA0001010000000000000015 /* RideHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RideHistoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001010000000000000002 /* AppTheme.swift */,
+				AA0001010000000000000013 /* AppLocalRideStoreFactory.swift */,
 				AA0001010000000000000003 /* Formatters.swift */,
 				AA0001010000000000000004 /* LocationManager.swift */,
 			);
@@ -93,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001010000000000000005 /* HomeViewModel.swift */,
+				AA0001010000000000000014 /* RideHistoryViewModel.swift */,
 				AA0001010000000000000006 /* RideTrackingViewModel.swift */,
 				AA0001010000000000000007 /* RideSummaryViewModel.swift */,
 				AA0001010000000000000008 /* ShareCardViewModel.swift */,
@@ -105,6 +113,7 @@
 			children = (
 				AA0001010000000000000009 /* RootView.swift */,
 				AA000101000000000000000A /* HomeView.swift */,
+				AA0001010000000000000015 /* RideHistoryView.swift */,
 				AA000101000000000000000B /* RideTrackingView.swift */,
 				AA000101000000000000000C /* RideSummaryView.swift */,
 				AA000101000000000000000D /* ShareCardView.swift */,
@@ -200,12 +209,15 @@
 				AA0000010000000000000002 /* AppTheme.swift in Sources */,
 				AA0000010000000000000003 /* Formatters.swift in Sources */,
 				AA0000010000000000000004 /* LocationManager.swift in Sources */,
+				AA0000010000000000000013 /* AppLocalRideStoreFactory.swift in Sources */,
 				AA0000010000000000000005 /* HomeViewModel.swift in Sources */,
+				AA0000010000000000000014 /* RideHistoryViewModel.swift in Sources */,
 				AA0000010000000000000006 /* RideTrackingViewModel.swift in Sources */,
 				AA0000010000000000000007 /* RideSummaryViewModel.swift in Sources */,
 				AA0000010000000000000008 /* ShareCardViewModel.swift in Sources */,
 				AA0000010000000000000009 /* RootView.swift in Sources */,
 				AA000001000000000000000A /* HomeView.swift in Sources */,
+				AA0000010000000000000015 /* RideHistoryView.swift in Sources */,
 				AA000001000000000000000B /* RideTrackingView.swift in Sources */,
 				AA000001000000000000000C /* RideSummaryView.swift in Sources */,
 				AA000001000000000000000D /* ShareCardView.swift in Sources */,

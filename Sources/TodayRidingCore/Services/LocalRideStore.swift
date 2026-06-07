@@ -3,6 +3,7 @@ import Foundation
 public protocol LocalRideStore: Sendable {
     func saveRide(_ ride: Ride) async throws
     func appendPoint(_ point: RidePoint) async throws
+    func loadRides() async throws -> [Ride]
     func loadPendingRides() async throws -> [Ride]
     func loadPoints(for rideID: UUID) async throws -> [RidePoint]
 }
@@ -22,9 +23,13 @@ public actor InMemoryRideStore: LocalRideStore {
     }
 
     public func loadPendingRides() async throws -> [Ride] {
-        rides.values
+        try await loadRides()
             .filter { $0.syncStatus == .pending || $0.syncStatus == .failed || $0.syncStatus == .localOnly }
-            .sorted { $0.startedAt < $1.startedAt }
+    }
+
+    public func loadRides() async throws -> [Ride] {
+        rides.values
+            .sorted { $0.startedAt > $1.startedAt }
     }
 
     public func loadPoints(for rideID: UUID) async throws -> [RidePoint] {
@@ -65,6 +70,11 @@ public actor FileRideStore: LocalRideStore {
     }
 
     public func loadPendingRides() async throws -> [Ride] {
+        try await loadRides()
+            .filter { $0.syncStatus == .pending || $0.syncStatus == .failed || $0.syncStatus == .localOnly }
+    }
+
+    public func loadRides() async throws -> [Ride] {
         try ensureStoreDirectoryExists()
 
         return try FileManager.default
@@ -78,8 +88,7 @@ public actor FileRideStore: LocalRideStore {
                 let data = try Data(contentsOf: url)
                 return try decoder.decode(Ride.self, from: data)
             }
-            .filter { $0.syncStatus == .pending || $0.syncStatus == .failed || $0.syncStatus == .localOnly }
-            .sorted { $0.startedAt < $1.startedAt }
+            .sorted { $0.startedAt > $1.startedAt }
     }
 
     public func loadPoints(for rideID: UUID) async throws -> [RidePoint] {

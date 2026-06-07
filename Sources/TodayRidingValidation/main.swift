@@ -131,8 +131,10 @@ func validateFileRideStore() async throws {
     try await store.appendPoint(point)
 
     let pendingRides = try await store.loadPendingRides()
+    let allRides = try await store.loadRides()
     let loadedPoints = try await store.loadPoints(for: ride.id)
 
+    assert(allRides.map(\.id).contains(ride.id), "FileRideStore should load all rides")
     assert(pendingRides.map(\.id).contains(ride.id), "FileRideStore should load pending rides")
     assert(loadedPoints == [point], "FileRideStore should persist ride points")
 }

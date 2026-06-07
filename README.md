@@ -18,6 +18,7 @@
 - 파일 기반 로컬 임시 저장: `FileRideStore`
 - Supabase REST 업로드 서비스 초안: `HTTPSupabaseService`
 - 공유 카드 미리보기, 이미지 렌더링, 사진 저장, iOS 공유 시트
+- 저장된 라이딩 기록 리스트와 요약 재진입
 - Supabase 스키마 초안: `supabase/schema.sql`
 
 ## 화면 테스트
@@ -40,6 +41,8 @@ Xcode에서:
 홈 -> 라이딩 시작 -> + 버튼으로 Mock 위치 추가 -> 종료 -> 요약 -> 공유 카드 만들기
 ```
 
+홈 우측 상단 기록 버튼에서 저장된 라이딩을 다시 열 수 있다.
+
 ## 코어 검증
 
 ```sh
@@ -57,4 +60,3 @@ TodayRidingValidation passed
 - 작업 지침: `docs/instructions/`
 - Xcode 설정: `docs/xcode-setup.md`
 - 남은 작업: `TODO.md`
-
