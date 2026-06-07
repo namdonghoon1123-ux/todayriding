@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>오늘탈까 Web Preview</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --surface: #11161d;
+      --surface2: #161c24;
+      --brand: #ff6b35;
+      --good: #3bd17f;
+      --ok: #e8b563;
+      --bad: #ff5247;
+      --text: #ffffff;
+      --secondary: #9aa3af;
+      --tertiary: #7c8694;
+      --line: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(100%, 430px);
+      min-height: 100svh;
+      margin: 0 auto;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen {
+      min-height: 100svh;
+      padding: 18px 20px 104px;
+      display: none;
+      animation: enter 220ms ease-out;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      margin-bottom: 16px;
+    }
+
+    .location {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .location .icon,
+    .accent {
+      color: var(--brand);
+    }
+
+    .date,
+    .muted {
+      color: var(--tertiary);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .icon-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: var(--surface2);
+      color: var(--brand);
+      display: grid;
+      place-items: center;
+      transition: transform 150ms ease, background 150ms ease;
+    }
+
+    .icon-button:active {
+      transform: scale(0.94);
+      background: #202832;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .score {
+      font-size: clamp(72px, 20vw, 92px);
+      line-height: 0.95;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .pill.good {
+      color: var(--good);
+      background: rgba(59, 209, 127, 0.18);
+    }
+
+    .pill.ok {
+      color: var(--ok);
+      background: rgba(232, 181, 99, 0.18);
+    }
+
+    .pill.bad {
+      color: var(--bad);
+      background: rgba(255, 82, 71, 0.18);
+    }
+
+    .notice {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ok);
+      font-size: 14.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .bar-panel {
+      margin-top: 14px;
+      padding: 16px;
+      background: var(--surface);
+      border-radius: 8px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--secondary);
+      font-size: 12.5px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .panel-head strong {
+      color: var(--brand);
+      font-size: 11.5px;
+    }
+
+    .bars {
+      height: 86px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      align-items: end;
+    }
+
+    .bar {
+      min-height: 20px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.16);
+      position: relative;
+      transition: height 250ms ease, background 250ms ease;
+    }
+
+    .bar.best {
+      background: var(--brand);
+      box-shadow: 0 4px 14px rgba(255, 107, 53, 0.38);
+    }
+
+    .bar span {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.48);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bar.best span {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .metric-grid {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric {
+      min-height: 86px;
+      padding: 13px 14px;
+      border-radius: 8px;
+      background: var(--surface2);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric label {
+      color: var(--tertiary);
+      font-size: 11.5px;
+      font-weight: 900;
+    }
+
+    .metric strong {
+      color: var(--text);
+      font-size: 19px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric small {
+      margin-left: 3px;
+      color: var(--tertiary);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .sunset {
+      margin-top: 16px;
+      color: var(--tertiary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .bottom-action {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: min(100%, 430px);
+      padding: 12px 20px 18px;
+      background: rgba(11, 15, 20, 0.94);
+      backdrop-filter: blur(12px);
+      z-index: 20;
+    }
+
+    .primary {
+      width: 100%;
+      height: 58px;
+      border-radius: 8px;
+      background: var(--brand);
+      color: var(--text);
+      font-size: 17.5px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(255, 107, 53, 0.42);
+      transition: transform 150ms ease, filter 150ms ease;
+    }
+
+    .primary:active {
+      transform: scale(0.98);
+      filter: brightness(0.96);
+    }
+
+    .map {
+      height: 48svh;
+      min-height: 330px;
+      margin: -18px -20px 0;
+      background: var(--surface2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    svg.route {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .recording {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: rgba(11, 15, 20, 0.72);
+      backdrop-filter: blur(12px);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #ff3b30;
+    }
+
+    .sheet {
+      margin: -26px -20px 0;
+      padding: 14px 20px 28px;
+      border-radius: 8px 8px 0 0;
+      background: var(--bg);
+      position: relative;
+      z-index: 2;
+    }
+
+    .handle {
+      width: 40px;
+      height: 4px;
+      margin: 0 auto 18px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .distance-hero {
+      text-align: center;
+    }
+
+    .distance-hero strong {
+      font-size: clamp(58px, 17vw, 76px);
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .distance-hero span {
+      color: var(--tertiary);
+      font-size: 18px;
+      font-weight: 900;
+      margin-left: 5px;
+    }
+
+    .distance-hero p {
+      margin: 6px 0 0;
+      color: var(--tertiary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .stats {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 24px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .stat strong.brand {
+      color: var(--brand);
+    }
+
+    .stat label {
+      display: block;
+      margin-top: 5px;
+      color: var(--tertiary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .controls {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .round {
+      width: 70px;
+      height: 70px;
+      border-radius: 999px;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 900;
+      display: grid;
+      place-items: center;
+    }
+
+    .round.stop {
+      width: 84px;
+      height: 84px;
+      background: var(--bad);
+      box-shadow: 0 8px 24px rgba(255, 82, 71, 0.34);
+    }
+
+    .title-stack {
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.08;
+      font-weight: 900;
+    }
+
+    .mini-map {
+      height: 220px;
+      border-radius: 8px;
+      background: var(--surface2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-grid {
+      margin-top: 18px;
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .summary-grid .stat {
+      padding: 18px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary-grid .stat:nth-child(odd) {
+      border-right: 1px solid var(--line);
+    }
+
+    .chips {
+      display: flex;
+      gap: 10px;
+      margin: 18px 0;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .share-card {
+      aspect-ratio: 9 / 16;
+      width: min(100%, 342px);
+      margin: 0 auto;
+      border-radius: 8px;
+      padding: 22px;
+      background: linear-gradient(160deg, #1b2430, #0c1118);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .share-card .mini-map {
+      height: 210px;
+      flex: 0 0 auto;
+    }
+
+    .share-distance {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .share-distance strong {
+      font-size: 56px;
+      line-height: 0.95;
+      font-weight: 900;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+    }
+
+    .brand-lockup {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .logo {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: var(--brand);
+      display: grid;
+      place-items: center;
+    }
+
+    .actions {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      text-align: center;
+    }
+
+    .action {
+      background: transparent;
+      color: var(--tertiary);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .action span {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 8px;
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .history-row {
+      min-height: 88px;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--surface);
+      color: inherit;
+      display: grid;
+      grid-template-columns: 64px 1fr 20px;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+    }
+
+    .thumb {
+      height: 64px;
+      border-radius: 8px;
+      background: var(--surface2);
+      display: grid;
+      place-items: center;
+      color: var(--brand);
+      overflow: hidden;
+    }
+
+    .history-row strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .history-row small {
+      display: block;
+      margin-top: 5px;
+      color: var(--tertiary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      margin-left: 6px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      color: var(--ok);
+      background: rgba(232, 181, 99, 0.16);
+      font-size: 10px;
+      font-weight: 900;
+      vertical-align: 1px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 94px;
+      transform: translateX(-50%) translateY(8px);
+      width: min(calc(100% - 40px), 390px);
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(22, 28, 36, 0.96);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      z-index: 30;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (min-width: 900px) {
+      body {
+        background: #05080c;
+      }
+
+      .app {
+        min-height: calc(100svh - 40px);
+        margin: 20px auto;
+        border-radius: 34px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.48);
+      }
+
+      .bottom-action {
+        bottom: 20px;
+        border-radius: 0 0 34px 34px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="screen active" id="home-screen">
+      <div class="topbar">
+        <div class="location"><span class="icon">●</span><span>서울 성동구</span></div>
+        <button class="icon-button" data-go="history" aria-label="기록 보기">↺</button>
+        <div class="date" id="today-label">2026.06.07</div>
+      </div>
+
+      <div class="score-row">
+        <div class="score" id="score-number">92</div>
+        <div>
+          <div class="pill good">라이딩 좋음</div>
+          <div class="muted" style="margin-top: 8px;">적합도 / 100점</div>
+        </div>
+      </div>
+
+      <div class="notice">◷ 오늘 18:00~20:30 라이딩 추천</div>
+
+      <div class="bar-panel">
+        <div class="panel-head">
+          <span>시간대별 적합도</span>
+          <strong>최적 18-19시</strong>
+        </div>
+        <div class="bars" aria-hidden="true">
+          <div class="bar" style="height: 42px;"><span>15</span></div>
+          <div class="bar" style="height: 55px;"><span>16</span></div>
+          <div class="bar" style="height: 68px;"><span>17</span></div>
+          <div class="bar best" style="height: 82px;"><span>18</span></div>
+          <div class="bar best" style="height: 78px;"><span>19</span></div>
+          <div class="bar" style="height: 61px;"><span>20</span></div>
+          <div class="bar" style="height: 38px;"><span>21</span></div>
+          <div class="bar" style="height: 28px;"><span>22</span></div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric"><label>기온</label><div><strong>23</strong><small>도</small></div></div>
+        <div class="metric"><label>바람</label><div><strong>3.2</strong><small>m/s</small></div></div>
+        <div class="metric"><label>강수</label><div><strong>20</strong><small>%</small></div></div>
+        <div class="metric"><label>초미세</label><div><strong>14</strong><small>PM2.5</small></div></div>
+        <div class="metric"><label>습도</label><div><strong>58</strong><small>%</small></div></div>
+        <div class="metric"><label>하늘</label><div><strong>맑음</strong><small>없음</small></div></div>
+      </div>
+
+      <div class="sunset">◐ 일몰 19:42 · 야간 라이트 권장</div>
+    </section>
+
+    <section class="screen" id="tracking-screen">
+      <div class="map">
+        <div class="recording"><span class="dot"></span><span id="recording-label">기록 중</span></div>
+        <svg class="route" viewBox="0 0 390 360" preserveAspectRatio="none">
+          <polyline id="route-outline" points="" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <polyline id="route-line" points="" fill="none" stroke="#ff6b35" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <circle id="current-dot" cx="80" cy="260" r="10" fill="#ff6b35" stroke="#fff" stroke-width="3"></circle>
+        </svg>
+      </div>
+
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="distance-hero">
+          <strong id="tracking-distance">0.0</strong><span>km</span>
+          <p>총 거리</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><strong id="tracking-time">00:00</strong><label>시간</label></div>
+          <div class="stat"><strong class="brand" id="tracking-current">0.0</strong><label>현재</label></div>
+          <div class="stat"><strong id="tracking-average">0.0</strong><label>평균</label></div>
+        </div>
+
+        <div class="controls">
+          <button class="round" id="pause-button">Ⅱ</button>
+          <button class="round stop" id="finish-button">■</button>
+          <button class="round" id="mock-point-button">＋</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="summary-screen">
+      <div class="topbar">
+        <div class="title-stack">
+          <div class="eyebrow">오늘탔다</div>
+          <h1>오늘 라이딩</h1>
+          <div class="date" id="summary-date">2026.06.07</div>
+        </div>
+        <button class="icon-button" data-go="home">×</button>
+      </div>
+
+      <div class="mini-map" id="summary-map"></div>
+
+      <div class="summary-grid">
+        <div class="stat"><strong id="summary-distance">0.0</strong><label>거리 km</label></div>
+        <div class="stat"><strong id="summary-time">00:00</strong><label>시간</label></div>
+        <div class="stat"><strong id="summary-average">0.0</strong><label>평균 km/h</label></div>
+        <div class="stat"><strong id="summary-max">0.0</strong><label>최고 km/h</label></div>
+      </div>
+
+      <div class="chips">
+        <span class="chip">☀ 23도 · 맑음</span>
+        <span class="chip">◎ PM2.5 14</span>
+        <span class="chip" id="sync-chip">대기</span>
+      </div>
+
+      <textarea id="memo" placeholder="오늘 라이딩 느낌을 남겨보세요"></textarea>
+    </section>
+
+    <section class="screen" id="share-screen">
+      <div class="topbar">
+        <button class="icon-button" data-go="summary">×</button>
+        <strong>공유 카드</strong>
+        <button class="icon-button" id="save-share">⇩</button>
+      </div>
+
+      <div class="share-card" id="share-card">
+        <div class="mini-map" id="share-map"></div>
+        <div class="eyebrow" id="share-date">2026.06.07</div>
+        <div class="share-distance"><strong id="share-distance">0.0</strong><span class="muted">km</span></div>
+        <div class="muted">오늘 라이딩</div>
+        <div class="divider"></div>
+        <div class="stats" style="margin:0; padding:0; border:0;">
+          <div class="stat"><strong id="share-time">00:00</strong><label>시간</label></div>
+          <div class="stat"><strong id="share-average">0.0</strong><label>평균</label></div>
+          <div class="stat"><strong id="share-max">0.0</strong><label>최고</label></div>
+        </div>
+        <div class="muted" id="share-summary">23도 맑음 · PM2.5 14</div>
+        <div class="brand-lockup"><span class="logo">♢</span><span>오늘탈까</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="action" data-toast="웹 미리보기에서는 저장 동작만 흉내냅니다."><span>▣</span>사진 저장</button>
+        <button class="action" data-toast="공유 시트는 iOS 앱에서 연결됩니다."><span>✉</span>메시지</button>
+        <button class="action" data-toast="공유 카드 UI 확인 완료"><span>↗</span>더보기</button>
+      </div>
+    </section>
+
+    <section class="screen" id="history-screen">
+      <div class="topbar">
+        <div>
+          <h1>기록</h1>
+          <div class="date"><span id="history-count">0</span>회 라이딩</div>
+        </div>
+        <button class="icon-button" data-go="home">×</button>
+      </div>
+      <div class="history-list" id="history-list"></div>
+    </section>
+
+    <div class="bottom-action" id="bottom-action">
+      <button class="primary" id="primary-button">🚲 라이딩 시작</button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </main>
+
+  <script>
+    const state = {
+      screen: "home",
+      paused: false,
+      elapsed: 0,
+      distance: 0,
+      currentSpeed: 0,
+      averageSpeed: 0,
+      maxSpeed: 0,
+      points: [[80, 260]],
+      timer: null,
+      rides: JSON.parse(localStorage.getItem("todayriding-preview-rides") || "[]")
+    };
+
+    const screens = {
+      home: document.getElementById("home-screen"),
+      tracking: document.getElementById("tracking-screen"),
+      summary: document.getElementById("summary-screen"),
+      share: document.getElementById("share-screen"),
+      history: document.getElementById("history-screen")
+    };
+
+    const primaryButton = document.getElementById("primary-button");
+    const bottomAction = document.getElementById("bottom-action");
+    const toast = document.getElementById("toast");
+
+    function today() {
+      const now = new Date();
+      return `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function go(screen) {
+      state.screen = screen;
+      Object.entries(screens).forEach(([key, el]) => el.classList.toggle("active", key === screen));
+      bottomAction.style.display = ["home", "summary"].includes(screen) ? "block" : "none";
+
+      if (screen === "home") {
+        primaryButton.textContent = "🚲 라이딩 시작";
+        primaryButton.onclick = startRide;
+      }
+
+      if (screen === "summary") {
+        primaryButton.textContent = "↗ 공유 카드 만들기";
+        primaryButton.onclick = () => {
+          updateShare();
+          go("share");
+        };
+      }
+
+      if (screen === "history") {
+        renderHistory();
+      }
+    }
+
+    function startRide() {
+      state.paused = false;
+      state.elapsed = 0;
+      state.distance = 0;
+      state.currentSpeed = 0;
+      state.averageSpeed = 0;
+      state.maxSpeed = 0;
+      state.points = [[80, 260]];
+      updateTracking();
+      go("tracking");
+      clearInterval(state.timer);
+      state.timer = setInterval(() => {
+        if (!state.paused) {
+          state.elapsed += 1;
+          updateTracking();
+        }
+      }, 1000);
+    }
+
+    function addPoint() {
+      const last = state.points[state.points.length - 1];
+      const next = [
+        Math.min(340, last[0] + 20 + Math.random() * 12),
+        Math.max(82, last[1] - 16 - Math.random() * 18)
+      ];
+      state.points.push(next);
+      state.distance += 0.28 + Math.random() * 0.18;
+      state.currentSpeed = 21 + Math.random() * 7;
+      state.maxSpeed = Math.max(state.maxSpeed, state.currentSpeed);
+      state.averageSpeed = state.elapsed > 0 ? Math.max(12, state.distance / (state.elapsed / 3600)) : state.currentSpeed;
+      updateTracking();
+    }
+
+    function updateTracking() {
+      document.getElementById("tracking-distance").textContent = state.distance.toFixed(1);
+      document.getElementById("tracking-time").textContent = formatTime(state.elapsed);
+      document.getElementById("tracking-current").textContent = state.currentSpeed.toFixed(1);
+      document.getElementById("tracking-average").textContent = state.averageSpeed.toFixed(1);
+      document.getElementById("recording-label").textContent = state.paused ? "일시정지" : "기록 중";
+      document.getElementById("pause-button").textContent = state.paused ? "▶" : "Ⅱ";
+      renderRoute();
+    }
+
+    function renderRoute() {
+      const points = state.points.map(([x, y]) => `${x},${y}`).join(" ");
+      document.getElementById("route-outline").setAttribute("points", points);
+      document.getElementById("route-line").setAttribute("points", points);
+      const [x, y] = state.points[state.points.length - 1];
+      document.getElementById("current-dot").setAttribute("cx", x);
+      document.getElementById("current-dot").setAttribute("cy", y);
+    }
+
+    function finishRide() {
+      clearInterval(state.timer);
+      if (state.points.length === 1) {
+        addPoint();
+        addPoint();
+      }
+      const ride = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        date: today(),
+        distance: state.distance,
+        elapsed: state.elapsed,
+        average: state.averageSpeed,
+        max: state.maxSpeed,
+        sync: "대기",
+        memo: "",
+        points: state.points
+      };
+      state.rides.unshift(ride);
+      localStorage.setItem("todayriding-preview-rides", JSON.stringify(state.rides.slice(0, 20)));
+      updateSummary(ride);
+      go("summary");
+    }
+
+    function updateSummary(ride = state.rides[0]) {
+      document.getElementById("summary-date").textContent = ride.date;
+      document.getElementById("summary-distance").textContent = ride.distance.toFixed(1);
+      document.getElementById("summary-time").textContent = formatTime(ride.elapsed);
+      document.getElementById("summary-average").textContent = ride.average.toFixed(1);
+      document.getElementById("summary-max").textContent = ride.max.toFixed(1);
+      document.getElementById("sync-chip").textContent = ride.sync;
+      document.getElementById("memo").value = ride.memo || "";
+      paintMiniMap("summary-map", ride.points);
+    }
+
+    function updateShare() {
+      const ride = state.rides[0] || {
+        date: today(),
+        distance: state.distance,
+        elapsed: state.elapsed,
+        average: state.averageSpeed,
+        max: state.maxSpeed,
+        points: state.points,
+        memo: ""
+      };
+      ride.memo = document.getElementById("memo").value;
+      document.getElementById("share-date").textContent = ride.date;
+      document.getElementById("share-distance").textContent = ride.distance.toFixed(1);
+      document.getElementById("share-time").textContent = formatTime(ride.elapsed);
+      document.getElementById("share-average").textContent = ride.average.toFixed(1);
+      document.getElementById("share-max").textContent = ride.max.toFixed(1);
+      document.getElementById("share-summary").textContent = `23도 맑음 · PM2.5 14${ride.memo ? " · " + ride.memo : ""}`;
+      paintMiniMap("share-map", ride.points);
+    }
+
+    function paintMiniMap(id, points) {
+      const el = document.getElementById(id);
+      const poly = points.map(([x, y]) => `${x},${y}`).join(" ");
+      el.innerHTML = `
+        <svg class="route" viewBox="0 0 390 260" preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid-${id}" width="36" height="36" patternUnits="userSpaceOnUse">
+              <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="390" height="260" fill="url(#grid-${id})"/>
+          <polyline points="${poly}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <polyline points="${poly}" fill="none" stroke="#ff6b35" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>`;
+    }
+
+    function renderHistory() {
+      const list = document.getElementById("history-list");
+      document.getElementById("history-count").textContent = state.rides.length;
+      if (!state.rides.length) {
+        list.innerHTML = `<div class="bar-panel" style="min-height:240px; display:grid; place-items:center; text-align:center;">
+          <div><div style="font-size:34px; color:var(--brand); margin-bottom:12px;">🚲</div>
+          <strong>아직 저장된 라이딩이 없습니다.</strong>
+          <div class="muted" style="margin-top:8px;">라이딩을 종료하면 여기에 표시됩니다.</div></div>
+        </div>`;
+        return;
+      }
+      list.innerHTML = state.rides.map(ride => `
+        <button class="history-row" data-ride="${ride.id}">
+          <span class="thumb">⌁</span>
+          <span>
+            <strong>오늘 라이딩 <span class="sync-pill">${ride.sync}</span></strong>
+            <small>${ride.date}</small>
+            <small>${ride.distance.toFixed(1)} km · ${formatTime(ride.elapsed)} · ${ride.average.toFixed(1)} km/h</small>
+          </span>
+          <span class="muted">›</span>
+        </button>
+      `).join("");
+      list.querySelectorAll("[data-ride]").forEach(button => {
+        button.addEventListener("click", () => {
+          const ride = state.rides.find(item => item.id === button.dataset.ride);
+          updateSummary(ride);
+          go("summary");
+        });
+      });
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    document.querySelectorAll("[data-go]").forEach(button => {
+      button.addEventListener("click", () => go(button.dataset.go));
+    });
+
+    document.querySelectorAll("[data-toast]").forEach(button => {
+      button.addEventListener("click", () => showToast(button.dataset.toast));
+    });
+
+    document.getElementById("pause-button").addEventListener("click", () => {
+      state.paused = !state.paused;
+      updateTracking();
+    });
+    document.getElementById("mock-point-button").addEventListener("click", addPoint);
+    document.getElementById("finish-button").addEventListener("click", finishRide);
+    document.getElementById("save-share").addEventListener("click", () => showToast("웹 미리보기에서는 저장 동작만 흉내냅니다."));
+
+    document.getElementById("today-label").textContent = today();
+    document.getElementById("summary-date").textContent = today();
+    document.getElementById("share-date").textContent = today();
+    primaryButton.onclick = startRide;
+    renderHistory();
+    renderRoute();
+  </script>
+</body>
+</html>

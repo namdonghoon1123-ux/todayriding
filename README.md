@@ -44,6 +44,37 @@ Xcode에서:
 
 홈 우측 상단 기록 버튼에서 저장된 라이딩을 다시 열 수 있다.
 
+## 웹 미리보기
+
+Xcode 설치 전에도 기본 화면 흐름은 브라우저에서 확인할 수 있다.
+
+파일 직접 열기:
+
+```sh
+open /Volumes/Extreme_SSD/todayriding/web-preview/index.html
+```
+
+또는 로컬 서버로 열기:
+
+```sh
+cd /Volumes/Extreme_SSD/todayriding/web-preview
+python3 -m http.server 8080
+```
+
+브라우저에서:
+
+```text
+http://127.0.0.1:8080/index.html
+```
+
+웹 미리보기에서 확인 가능한 흐름:
+
+```text
+홈 -> 라이딩 시작 -> + 버튼으로 Mock 위치 추가 -> 종료 -> 요약 -> 공유 카드 -> 기록 리스트
+```
+
+웹 미리보기는 화면/상호작용 확인용이다. 실제 GPS, 사진 저장, Supabase 업로드는 iOS 앱에서 검증한다.
+
 ## 코어 검증
 
 ```sh
