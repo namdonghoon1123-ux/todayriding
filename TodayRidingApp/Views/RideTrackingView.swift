@@ -59,7 +59,9 @@ struct RideTrackingView: View {
                     }
 
                     Button {
-                        onFinish(viewModel.finish())
+                        Task {
+                            onFinish(await viewModel.finish())
+                        }
                     } label: {
                         Image(systemName: "stop.fill")
                             .font(.system(size: 28, weight: .bold))
@@ -138,4 +140,3 @@ struct RideTrackingView: View {
         viewModel.points.last?.speedMps.map { max(0, $0 * 3.6) } ?? 0
     }
 }
-

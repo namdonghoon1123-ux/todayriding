@@ -4,8 +4,8 @@
 
 - SwiftData 또는 SQLite 기반 `LocalRideStore` 검토
   - 현재는 JSON 파일 기반 `FileRideStore`로 라이딩/포인트 영속 저장까지 구현됨
-- Supabase 프로젝트 생성 후 URL/anon key 주입
-  - 현재는 SDK 없이 REST 업로드 가능한 `HTTPSupabaseService` 초안 구현됨
+- Supabase 프로젝트 생성 후 URL/anon key 주입 및 실기기 업로드 테스트
+  - 현재는 SDK 없이 REST 업로드 가능한 `HTTPSupabaseService`와 앱 연결까지 구현됨
 - 기상청 `KMAWeatherService` 실제 API 매핑
   - 현재는 교체 가능한 타입과 명확한 not implemented 오류만 있음
 - 에어코리아 `AirKoreaService` 실제 API 매핑
@@ -14,7 +14,7 @@
 - 사진 저장 권한 실제 기기 테스트
 - Xcode 설치 후 iOS Simulator 빌드 검증
 - 기록 리스트에서 실제 경로 썸네일 렌더링
-- Supabase 동기화 성공/실패 상태를 앱 화면에서 수동 재시도 가능하게 연결
+- Supabase 동기화 실패 항목 수동 재시도 버튼
 
 ## 2차 기능
 

@@ -62,3 +62,23 @@ swift run TodayRidingValidation
 ```text
 TodayRidingValidation passed
 ```
+
+## Supabase 설정
+
+Supabase 키는 저장소에 커밋하지 않는다.
+
+Xcode에서 `TodayRiding` target을 선택하고 Build Settings에 아래 값을 추가한다.
+
+```text
+TODAYRIDING_SUPABASE_URL = https://<project-ref>.supabase.co
+TODAYRIDING_SUPABASE_ANON_KEY = <anon public key>
+```
+
+앱은 generated Info.plist의 아래 키로 값을 읽는다.
+
+```text
+TODAYRIDING_SUPABASE_URL
+TODAYRIDING_SUPABASE_ANON_KEY
+```
+
+값이 없으면 라이딩은 로컬 JSON 저장소에 남고 `pending` 상태가 된다. 값이 있으면 라이딩 종료 시 `rides`, `ride_points` 테이블 업로드를 시도한다.

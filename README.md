@@ -17,6 +17,7 @@
 - GPS 포인트 기반 거리/시간/속도 계산
 - 파일 기반 로컬 임시 저장: `FileRideStore`
 - Supabase REST 업로드 서비스 초안: `HTTPSupabaseService`
+- Supabase 설정 주입 시 라이딩 종료 후 `rides`, `ride_points` 업로드 시도
 - 공유 카드 미리보기, 이미지 렌더링, 사진 저장, iOS 공유 시트
 - 저장된 라이딩 기록 리스트와 요약 재진입
 - Supabase 스키마 초안: `supabase/schema.sql`
@@ -54,6 +55,19 @@ swift run TodayRidingValidation
 ```text
 TodayRidingValidation passed
 ```
+
+## Supabase 설정
+
+Supabase 키는 Git에 커밋하지 않는다.
+
+Xcode에서 `TodayRiding` target의 Build Settings에 아래 사용자 정의 값을 추가한다.
+
+- `TODAYRIDING_SUPABASE_URL`: Supabase project URL
+- `TODAYRIDING_SUPABASE_ANON_KEY`: Supabase anon public key
+
+테이블은 `supabase/schema.sql` 기준으로 생성한다.
+
+설정값이 비어 있으면 라이딩은 로컬에 저장되고 `pending` 상태로 남는다. 설정값이 있으면 라이딩 종료 시 Supabase REST API로 `rides`, `ride_points` 업로드를 시도한다.
 
 ## 문서
 

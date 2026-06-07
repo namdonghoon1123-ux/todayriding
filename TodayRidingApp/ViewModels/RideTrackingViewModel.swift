@@ -11,16 +11,19 @@ final class RideTrackingViewModel: ObservableObject {
 
     private let tracker: RideTracker
     private let localStore: LocalRideStore
+    private let rideSyncService: RideSyncService?
     private var mockCoordinate = GeoPoint(latitude: 37.5445, longitude: 127.0557)
 
     init(
         weather: WeatherSnapshot?,
         airQuality: AirQualitySnapshot?,
         tracker: RideTracker = RideTracker(),
-        localStore: LocalRideStore
+        localStore: LocalRideStore,
+        supabaseService: SupabaseService? = AppSupabaseServiceFactory.make()
     ) {
         self.tracker = tracker
         self.localStore = localStore
+        self.rideSyncService = supabaseService.map(RideSyncService.init)
         self.ride = tracker.start(weather: weather, airQuality: airQuality)
 
         Task {
@@ -67,13 +70,17 @@ final class RideTrackingViewModel: ObservableObject {
         )
     }
 
-    func finish() -> RideSummary {
+    func finish() async -> RideSummary {
         if let finishedRide = tracker.finish() {
             ride = finishedRide
         }
         trackingState = tracker.state
 
-        Task {
+        try? await localStore.saveRide(ride)
+
+        if let rideSyncService {
+            let syncStatus = await rideSyncService.sync(ride: ride, points: points)
+            ride.syncStatus = syncStatus
             try? await localStore.saveRide(ride)
         }
 

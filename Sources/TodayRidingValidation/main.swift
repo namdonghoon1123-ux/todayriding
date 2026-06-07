@@ -139,9 +139,18 @@ func validateFileRideStore() async throws {
     assert(loadedPoints == [point], "FileRideStore should persist ride points")
 }
 
+func validateRideSyncFallback() async {
+    let ride = Ride(startedAt: Date(timeIntervalSince1970: 3_000))
+    let syncService = RideSyncService(supabaseService: NoopSupabaseService())
+    let status = await syncService.sync(ride: ride, points: [])
+
+    assert(status == .pending, "Unconfigured sync should leave ride pending")
+}
+
 validateDistanceCalculator()
 validateRidingScoreCalculator()
 validateRideTracker()
 try await validateFileRideStore()
+await validateRideSyncFallback()
 
 print("TodayRidingValidation passed")

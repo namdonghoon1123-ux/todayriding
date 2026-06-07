@@ -10,6 +10,7 @@ public struct NoopSupabaseService: SupabaseService {
     public func uploadRide(_ ride: Ride, points: [RidePoint]) async throws {
         _ = ride
         _ = points
+        throw SupabaseUploadError.notConfigured
     }
 }
 
@@ -73,7 +74,8 @@ public struct HTTPSupabaseService: SupabaseService {
 
     private func post<T: Encodable>(path: String, body: T) async throws {
         let url = configuration.projectURL
-            .appendingPathComponent("rest/v1")
+            .appendingPathComponent("rest")
+            .appendingPathComponent("v1")
             .appendingPathComponent(path)
 
         var request = URLRequest(url: url)
@@ -81,7 +83,7 @@ public struct HTTPSupabaseService: SupabaseService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(configuration.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(configuration.anonKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("representation", forHTTPHeaderField: "Prefer")
+        request.setValue("resolution=merge-duplicates,return=representation", forHTTPHeaderField: "Prefer")
         request.httpBody = try encoder.encode(body)
 
         let (_, response) = try await session.data(for: request)
@@ -94,6 +96,7 @@ public struct HTTPSupabaseService: SupabaseService {
 }
 
 public enum SupabaseUploadError: Error, Sendable {
+    case notConfigured
     case requestFailed
 }
 
