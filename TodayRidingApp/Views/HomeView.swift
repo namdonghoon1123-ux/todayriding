@@ -6,6 +6,7 @@ struct HomeView: View {
     let onStartRide: () -> Void
     let onShowHistory: () -> Void
     let onShowReport: () -> Void
+    var onSignOut: (() -> Void)? = nil
 
     var body: some View {
         ScrollView {
@@ -60,6 +61,17 @@ struct HomeView: View {
                     .background(AppTheme.surface2, in: Circle())
             }
             .accessibilityLabel("리포트 보기")
+
+            if let onSignOut {
+                Button(action: onSignOut) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .frame(width: 40, height: 40)
+                        .background(AppTheme.surface2, in: Circle())
+                }
+                .accessibilityLabel("로그아웃")
+            }
 
             Button(action: onShowHistory) {
                 Image(systemName: "clock.arrow.circlepath")
