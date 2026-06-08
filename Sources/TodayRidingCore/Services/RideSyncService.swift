@@ -29,6 +29,52 @@ public struct RideSyncService: Sendable {
             return .pending
         }
     }
+
+    /// 로컬에 저장된 `pending` / `failed` / `localOnly` 라이딩을 일괄 재동기화하고 결과 요약을 돌려준다.
+    /// 호출자(예: 앱 실행 시 RootView)는 결과를 토스트나 로그로 노출할 수 있다.
+    public func resyncAllPending(localStore: LocalRideStore) async -> RideResyncSummary {
+        var summary = RideResyncSummary()
+        let pendingRides: [Ride]
+        do {
+            pendingRides = try await localStore.loadPendingRides()
+        } catch {
+            return summary
+        }
+
+        for var ride in pendingRides {
+            let points = (try? await localStore.loadPoints(for: ride.id)) ?? []
+            let newStatus = await sync(ride: ride, points: points)
+            ride.syncStatus = newStatus
+            try? await localStore.saveRide(ride)
+            summary.record(status: newStatus)
+        }
+
+        return summary
+    }
+}
+
+/// `resyncAllPending`의 실행 결과 카운트.
+public struct RideResyncSummary: Sendable, Equatable {
+    public var succeeded = 0
+    public var stillPending = 0
+    public var failed = 0
+
+    public init() {}
+
+    public var attempted: Int {
+        succeeded + stillPending + failed
+    }
+
+    mutating func record(status: RideSyncStatus) {
+        switch status {
+        case .synced:
+            succeeded += 1
+        case .pending, .localOnly:
+            stillPending += 1
+        case .failed:
+            failed += 1
+        }
+    }
 }
 
 public struct SupabaseConfiguration: Sendable {
