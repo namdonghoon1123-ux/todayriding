@@ -3,6 +3,9 @@ import TodayRidingCore
 
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
+    @AppStorage(HealthKitWorkoutRecorder.isEnabledDefaultsKey)
+    private var healthKitEnabled = false
+    @State private var healthKitToast: String?
     let onStartRide: () -> Void
     let onShowHistory: () -> Void
     let onShowReport: () -> Void
@@ -19,6 +22,9 @@ struct HomeView: View {
                     messageRow(recommendation.message)
                     metricGrid(weather: weather, airQuality: airQuality)
                     sunsetRow(weather)
+                    if let advice = viewModel.coachAdvice {
+                        coachCard(advice)
+                    }
                 } else {
                     ProgressView()
                         .tint(AppTheme.brand)
@@ -40,6 +46,19 @@ struct HomeView: View {
         .task {
             await viewModel.load()
         }
+        .alert(
+            "건강 앱",
+            isPresented: Binding(
+                get: { healthKitToast != nil },
+                set: { isPresented in
+                    if !isPresented { healthKitToast = nil }
+                }
+            )
+        ) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text(healthKitToast ?? "")
+        }
     }
 
     private var header: some View {
@@ -51,6 +70,15 @@ struct HomeView: View {
                 .tint(AppTheme.brand)
 
             Spacer()
+
+            Button(action: toggleHealthKit) {
+                Image(systemName: healthKitEnabled ? "heart.fill" : "heart")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(healthKitEnabled ? AppTheme.bad : AppTheme.textTertiary)
+                    .frame(width: 40, height: 40)
+                    .background(AppTheme.surface2, in: Circle())
+            }
+            .accessibilityLabel(healthKitEnabled ? "건강 앱 저장 끄기" : "건강 앱 저장 켜기")
 
             Button(action: onShowReport) {
                 Image(systemName: "chart.bar.fill")
@@ -73,6 +101,20 @@ struct HomeView: View {
             Text(AppFormatters.date(Date()))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(AppTheme.textTertiary)
+        }
+    }
+
+    private func toggleHealthKit() {
+        Task {
+            if healthKitEnabled {
+                HealthKitWorkoutRecorder.disable()
+                healthKitToast = "건강 앱 저장을 껐습니다."
+            } else {
+                let granted = await HealthKitWorkoutRecorder.enable()
+                healthKitToast = granted
+                    ? "라이딩 종료 시 건강 앱에 사이클링 운동이 저장됩니다."
+                    : "건강 앱 권한이 필요합니다. 설정에서 권한을 허용해주세요."
+            }
         }
     }
 
@@ -155,6 +197,48 @@ struct HomeView: View {
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(AppTheme.textTertiary)
             .tint(AppTheme.ok)
+    }
+
+    private func coachCard(_ advice: RidingCoachAdvice) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon(for: advice.tone))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(toneColor(for: advice.tone))
+                .frame(width: 36, height: 36)
+                .background(toneColor(for: advice.tone).opacity(0.16), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(advice.headline)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(advice.detail)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func icon(for tone: RidingCoachAdvice.Tone) -> String {
+        switch tone {
+        case .encouraging: return "bolt.heart.fill"
+        case .reassuring: return "checkmark.seal.fill"
+        case .cautious: return "exclamationmark.triangle.fill"
+        case .recoveryReminder: return "bed.double.fill"
+        }
+    }
+
+    private func toneColor(for tone: RidingCoachAdvice.Tone) -> Color {
+        switch tone {
+        case .encouraging: return AppTheme.brand
+        case .reassuring: return AppTheme.good
+        case .cautious: return AppTheme.ok
+        case .recoveryReminder: return AppTheme.textSecondary
+        }
     }
 
     private func color(for grade: RidingScoreGrade) -> Color {

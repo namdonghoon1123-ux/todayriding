@@ -29,6 +29,10 @@ struct ReportView: View {
                     ForEach(viewModel.report.years) { year in
                         yearSection(year)
                     }
+
+                    if !viewModel.suggestedCourses.isEmpty {
+                        suggestionsSection
+                    }
                 }
             }
             .padding(.horizontal, 20)
@@ -190,6 +194,53 @@ struct ReportView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var suggestionsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("다시 타기 좋은 코스")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+
+            ForEach(viewModel.suggestedCourses) { suggestion in
+                suggestionRow(suggestion)
+            }
+        }
+    }
+
+    private func suggestionRow(_ suggestion: SuggestedCourse) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: suggestionIcon(for: suggestion.reason))
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(AppTheme.brand)
+                .frame(width: 32, height: 32)
+                .background(AppTheme.brand.opacity(0.16), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(suggestion.reason.label)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(AppTheme.brand)
+                Text(suggestion.ride.title ?? "오늘 라이딩")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text(suggestion.detail)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+            Spacer()
+        }
+        .padding(14)
+        .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func suggestionIcon(for reason: SuggestedCourse.Reason) -> String {
+        switch reason {
+        case .longest: return "arrow.up.right.circle.fill"
+        case .mostRecent: return "clock.fill"
+        case .fastest: return "speedometer"
+        case .mostRepeated: return "repeat.circle.fill"
+        }
     }
 
     private func monthRow(_ month: MonthlyReport) -> some View {

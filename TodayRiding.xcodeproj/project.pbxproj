@@ -35,6 +35,7 @@
 		AA000001000000000000001A /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000101000000000000001A /* ReportViewModel.swift */; };
 		AA000001000000000000001B /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000101000000000000001B /* ReportView.swift */; };
 		AA000001000000000000001C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000101000000000000001C /* NotificationManager.swift */; };
+		AA000001000000000000001D /* HealthKitWorkoutRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000101000000000000001D /* HealthKitWorkoutRecorder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +67,8 @@
 		AA000101000000000000001A /* ReportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViewModel.swift; sourceTree = "<group>"; };
 		AA000101000000000000001B /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
 		AA000101000000000000001C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		AA000101000000000000001D /* HealthKitWorkoutRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWorkoutRecorder.swift; sourceTree = "<group>"; };
+		AA000101000000000000001E /* TodayRiding.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodayRiding.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001010000000000000001 /* TodayRidingApp.swift */,
+				AA000101000000000000001E /* TodayRiding.entitlements */,
 				AA0003010000000000000003 /* Support */,
 				AA0003010000000000000004 /* ViewModels */,
 				AA0003010000000000000005 /* Views */,
@@ -111,6 +115,7 @@
 				AA0001010000000000000003 /* Formatters.swift */,
 				AA0001010000000000000004 /* LocationManager.swift */,
 				AA000101000000000000001C /* NotificationManager.swift */,
+				AA000101000000000000001D /* HealthKitWorkoutRecorder.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -231,6 +236,7 @@
 				AA0000010000000000000003 /* Formatters.swift in Sources */,
 				AA0000010000000000000004 /* LocationManager.swift in Sources */,
 				AA000001000000000000001C /* NotificationManager.swift in Sources */,
+				AA000001000000000000001D /* HealthKitWorkoutRecorder.swift in Sources */,
 				AA0000010000000000000013 /* AppLocalRideStoreFactory.swift in Sources */,
 				AA0000010000000000000016 /* AppSupabaseServiceFactory.swift in Sources */,
 				AA0000010000000000000017 /* AppConfiguration.swift in Sources */,
@@ -379,11 +385,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TodayRidingApp/TodayRiding.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "오늘탈까";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "완료한 라이딩 기록을 건강 앱에서 함께 보기 위해 필요합니다.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "라이딩 완료 시 건강 앱에 사이클링 운동 기록을 저장합니다.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "공유 카드를 사진 앱에 저장하기 위해 권한이 필요합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "라이딩 경로와 거리 기록을 위해 위치 정보가 필요합니다.";
 				INFOPLIST_KEY_UIBackgroundModes = location;
@@ -419,11 +428,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TodayRidingApp/TodayRiding.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "오늘탈까";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "완료한 라이딩 기록을 건강 앱에서 함께 보기 위해 필요합니다.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "라이딩 완료 시 건강 앱에 사이클링 운동 기록을 저장합니다.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "공유 카드를 사진 앱에 저장하기 위해 권한이 필요합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "라이딩 경로와 거리 기록을 위해 위치 정보가 필요합니다.";
 				INFOPLIST_KEY_UIBackgroundModes = location;

@@ -3,14 +3,20 @@ import SwiftUI
 import TodayRidingCore
 
 struct RootView: View {
-    @StateObject private var homeViewModel = HomeViewModel()
+    @StateObject private var homeViewModel: HomeViewModel
     @StateObject private var locationManager = LocationManager()
-    private let localStore = AppLocalRideStoreFactory.make()
+    private let localStore: LocalRideStore
     @State private var trackingViewModel: RideTrackingViewModel?
     @State private var summary: RideSummary?
     @State private var shareSummary: RideSummary?
     @State private var isShowingHistory = false
     @State private var isShowingReport = false
+
+    init() {
+        let store = AppLocalRideStoreFactory.make()
+        self.localStore = store
+        _homeViewModel = StateObject(wrappedValue: HomeViewModel(localStore: store))
+    }
 
     var body: some View {
         NavigationStack {
