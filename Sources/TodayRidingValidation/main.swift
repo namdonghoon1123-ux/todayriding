@@ -147,10 +147,182 @@ func validateRideSyncFallback() async {
     assert(status == .pending, "Unconfigured sync should leave ride pending")
 }
 
+func validateKMAGrid() {
+    let seoul = KMAGrid.grid(latitude: 37.5665, longitude: 126.9780)
+    assert(seoul.nx == 60 && seoul.ny == 127, "Seoul should map to grid (60, 127), got (\(seoul.nx), \(seoul.ny))")
+
+    let busan = KMAGrid.grid(latitude: 35.1796, longitude: 129.0756)
+    assert((96...100).contains(busan.nx) && (74...78).contains(busan.ny), "Busan grid out of expected region: (\(busan.nx), \(busan.ny))")
+}
+
+func validateSolarCalculator() {
+    var kst = Calendar(identifier: .gregorian)
+    kst.timeZone = TimeZone(identifier: "Asia/Seoul")!
+    func kstMinutes(_ date: Date) -> Int {
+        let c = kst.dateComponents([.hour, .minute], from: date)
+        return (c.hour ?? 0) * 60 + (c.minute ?? 0)
+    }
+
+    let summer = Date(timeIntervalSince1970: 1_718_938_800) // 2024-06-21
+    let winter = Date(timeIntervalSince1970: 1_734_750_000) // 2024-12-21
+
+    guard let summerSunset = SolarCalculator.sunset(on: summer, latitude: 37.5665, longitude: 126.9780),
+          let winterSunset = SolarCalculator.sunset(on: winter, latitude: 37.5665, longitude: 126.9780)
+    else {
+        fatalError("Sunset should be computable for Seoul")
+    }
+
+    let summerMinutes = kstMinutes(summerSunset)
+    let winterMinutes = kstMinutes(winterSunset)
+    assert(summerMinutes >= 19 * 60 && summerMinutes <= 20 * 60 + 30, "Seoul summer sunset should be evening, got \(summerMinutes) min")
+    assert(winterMinutes >= 16 * 60 + 30 && winterMinutes <= 17 * 60 + 45, "Seoul winter sunset should be ~17h, got \(winterMinutes) min")
+    assert(summerMinutes > winterMinutes, "Summer sunset should be later than winter")
+}
+
+func validateKoreaTMConverter() {
+    let point = KoreaTMConverter.convert(latitude: 37.5666, longitude: 126.9784)
+    assert(point.x > 100_000 && point.x < 400_000, "TM x out of bounds: \(point.x)")
+    assert(point.y > 100_000 && point.y < 900_000, "TM y out of bounds: \(point.y)")
+
+    let west = KoreaTMConverter.convert(latitude: 37.5, longitude: 126.5)
+    let east = KoreaTMConverter.convert(latitude: 37.5, longitude: 127.5)
+    assert(east.x > west.x, "Eastward point should have larger TM x")
+
+    let south = KoreaTMConverter.convert(latitude: 35.0, longitude: 127.0)
+    let north = KoreaTMConverter.convert(latitude: 38.0, longitude: 127.0)
+    assert(north.y > south.y, "Northward point should have larger TM y")
+}
+
+func validateGPXExporter() {
+    let ride = Ride(
+        title: "검증 라이딩 & <tag>",
+        startedAt: Date(timeIntervalSince1970: 1_700_000_000),
+        distanceMeters: 1234
+    )
+    let points = [
+        RidePoint(
+            rideID: ride.id,
+            recordedAt: ride.startedAt,
+            coordinate: GeoPoint(latitude: 37.5445, longitude: 127.0557),
+            altitude: 12,
+            speedMps: 5.5,
+            sequence: 0
+        ),
+        RidePoint(
+            rideID: ride.id,
+            recordedAt: ride.startedAt.addingTimeInterval(60),
+            coordinate: GeoPoint(latitude: 37.5450, longitude: 127.0560),
+            sequence: 1
+        )
+    ]
+
+    let gpx = GPXExporter.gpx(for: ride, points: points)
+    assert(gpx.hasPrefix("<?xml version=\"1.0\""), "GPX should start with XML declaration")
+    assert(gpx.contains("<gpx version=\"1.1\""), "GPX should declare version 1.1")
+    let trackPointCount = gpx.components(separatedBy: "<trkpt ").count - 1
+    assert(trackPointCount == points.count, "GPX trkpt count should match points, got \(trackPointCount)")
+    assert(gpx.contains("lat=\"37.544500\""), "GPX should include formatted latitude")
+    assert(gpx.contains("검증 라이딩 &amp; &lt;tag&gt;"), "GPX should escape special characters in title")
+    assert((gpx.components(separatedBy: "<ele>").count - 1) == 1, "GPX should include elevation only when present")
+}
+
+func validateRainAlertEvaluator() {
+    func weather(prob: Int, type: PrecipitationType) -> WeatherSnapshot {
+        let now = Date(timeIntervalSince1970: 1_000)
+        return WeatherSnapshot(
+            observedAt: now,
+            locationName: "서울",
+            temperatureCelsius: 22,
+            feelsLikeCelsius: 22,
+            humidityPercent: 55,
+            precipitationProbabilityPercent: prob,
+            precipitationType: type,
+            skyCondition: "흐림",
+            cloudDescription: "구름 많음",
+            windSpeedMps: 2,
+            windDirection: "서풍",
+            sunsetAt: now.addingTimeInterval(4 * 3_600)
+        )
+    }
+
+    assert(RainAlertEvaluator.isRainImminent(weather(prob: 10, type: .rain)), "Rain type should be imminent")
+    assert(RainAlertEvaluator.isRainImminent(weather(prob: 60, type: .none)), "60% should be imminent")
+    assert(!RainAlertEvaluator.isRainImminent(weather(prob: 59, type: .none)), "59% should not be imminent")
+
+    let safe = weather(prob: 20, type: .none)
+    let risky = weather(prob: 80, type: .rain)
+    assert(RainAlertEvaluator.shouldWarn(previous: nil, current: risky), "First risky evaluation should warn")
+    assert(RainAlertEvaluator.shouldWarn(previous: safe, current: risky), "Safe->risky should warn")
+    assert(!RainAlertEvaluator.shouldWarn(previous: risky, current: risky), "Risky->risky should not warn")
+    assert(!RainAlertEvaluator.shouldWarn(previous: risky, current: safe), "Risky->safe should not warn")
+}
+
+func validateRideStatistics() {
+    var utc = Calendar(identifier: .gregorian)
+    utc.timeZone = TimeZone(identifier: "UTC")!
+    func day(_ year: Int, _ month: Int, _ d: Int) -> Date {
+        utc.date(from: DateComponents(year: year, month: month, day: d, hour: 12))!
+    }
+    func ride(_ start: Date, distance: Double, duration: Int, maxSpeed: Double, avg: Double) -> Ride {
+        Ride(
+            startedAt: start,
+            endedAt: start.addingTimeInterval(Double(duration)),
+            durationSeconds: duration,
+            movingSeconds: duration,
+            distanceMeters: distance,
+            averageSpeedKmh: avg,
+            maxSpeedKmh: maxSpeed
+        )
+    }
+
+    let now = day(2023, 11, 14)
+    let rides = [
+        ride(day(2023, 11, 14), distance: 10_000, duration: 1_800, maxSpeed: 35, avg: 22),
+        ride(day(2023, 11, 13), distance: 20_000, duration: 3_600, maxSpeed: 30, avg: 20),
+        ride(day(2022, 5, 5), distance: 42_000, duration: 7_200, maxSpeed: 48, avg: 19)
+    ]
+
+    let report = RideStatisticsCalculator.report(for: rides, calendar: utc, now: now)
+    assert(report.overall.rideCount == 3, "Overall ride count should be 3")
+    assert(report.overall.totalDistanceMeters == 72_000, "Overall distance should be 72000")
+    assert(report.years.map(\.year) == [2023, 2022], "Years should be sorted desc")
+    assert(report.years.first?.stats.rideCount == 2, "2023 should have 2 rides")
+    assert(report.records.longestDistanceMeters == 42_000, "Longest distance should be 42000")
+    assert(report.records.topSpeedKmh == 48, "Top speed should be 48")
+    assert(report.streak.currentDays == 2, "Current streak should be 2 (14th, 13th)")
+    assert(report.streak.longestDays == 2, "Longest streak should be 2")
+
+    let empty = RideStatisticsCalculator.report(for: [], calendar: utc, now: now)
+    assert(empty == .empty, "Empty rides should produce empty report")
+}
+
+func validateWeatherMath() {
+    assert(WeatherMath.windDirection(degrees: 0) == "북풍", "0deg should be 북풍")
+    assert(WeatherMath.windDirection(degrees: 90) == "동풍", "90deg should be 동풍")
+    assert(WeatherMath.windDirection(degrees: 180) == "남풍", "180deg should be 남풍")
+    assert(WeatherMath.windDirection(degrees: 270) == "서풍", "270deg should be 서풍")
+
+    assert(WeatherMath.precipitationType(ptyCode: 0) == .none, "PTY 0 -> none")
+    assert(WeatherMath.precipitationType(ptyCode: 1) == .rain, "PTY 1 -> rain")
+    assert(WeatherMath.precipitationType(ptyCode: 3) == .snow, "PTY 3 -> snow")
+
+    let hotHumid = WeatherMath.apparentTemperature(temperatureCelsius: 30, humidityPercent: 80, windSpeedMps: 0)
+    assert(hotHumid > 30, "Hot humid apparent temp should exceed actual")
+    let coldWindy = WeatherMath.apparentTemperature(temperatureCelsius: 5, humidityPercent: 30, windSpeedMps: 10)
+    assert(coldWindy < 5, "Cold windy apparent temp should be below actual")
+}
+
 validateDistanceCalculator()
 validateRidingScoreCalculator()
 validateRideTracker()
 try await validateFileRideStore()
 await validateRideSyncFallback()
+validateKMAGrid()
+validateSolarCalculator()
+validateKoreaTMConverter()
+validateWeatherMath()
+validateGPXExporter()
+validateRideStatistics()
+validateRainAlertEvaluator()
 
 print("TodayRidingValidation passed")

@@ -5,6 +5,7 @@ struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     let onStartRide: () -> Void
     let onShowHistory: () -> Void
+    let onShowReport: () -> Void
 
     var body: some View {
         ScrollView {
@@ -50,6 +51,15 @@ struct HomeView: View {
                 .tint(AppTheme.brand)
 
             Spacer()
+
+            Button(action: onShowReport) {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(AppTheme.brand)
+                    .frame(width: 40, height: 40)
+                    .background(AppTheme.surface2, in: Circle())
+            }
+            .accessibilityLabel("리포트 보기")
 
             Button(action: onShowHistory) {
                 Image(systemName: "clock.arrow.circlepath")

@@ -12,6 +12,9 @@ final class RideTrackingViewModel: ObservableObject {
     private let tracker: RideTracker
     private let localStore: LocalRideStore
     private let rideSyncService: RideSyncService?
+    private let weatherService: WeatherService?
+    private var lastEvaluatedWeather: WeatherSnapshot?
+    private var rainMonitorTask: Task<Void, Never>?
     private var mockCoordinate = GeoPoint(latitude: 37.5445, longitude: 127.0557)
 
     init(
@@ -19,16 +22,50 @@ final class RideTrackingViewModel: ObservableObject {
         airQuality: AirQualitySnapshot?,
         tracker: RideTracker = RideTracker(),
         localStore: LocalRideStore,
-        supabaseService: SupabaseService? = AppSupabaseServiceFactory.make()
+        supabaseService: SupabaseService? = AppSupabaseServiceFactory.make(),
+        weatherService: WeatherService? = AppWeatherServiceFactory.make()
     ) {
         self.tracker = tracker
         self.localStore = localStore
         self.rideSyncService = supabaseService.map(RideSyncService.init)
+        self.weatherService = weatherService
+        self.lastEvaluatedWeather = weather
         self.ride = tracker.start(weather: weather, airQuality: airQuality)
 
         Task {
             try? await localStore.saveRide(ride)
         }
+    }
+
+    /// 라이딩 중 주기적으로 날씨를 다시 확인해 비구름 접근 시 로컬 알림을 보낸다.
+    func startRainMonitoring(interval: TimeInterval = 600) {
+        guard let weatherService else { return }
+
+        rainMonitorTask?.cancel()
+        rainMonitorTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                guard !Task.isCancelled, let self else { return }
+                await self.checkRain(using: weatherService)
+            }
+        }
+    }
+
+    func stopRainMonitoring() {
+        rainMonitorTask?.cancel()
+        rainMonitorTask = nil
+    }
+
+    private func checkRain(using service: WeatherService) async {
+        guard trackingState == .recording else { return }
+        guard let current = try? await service.currentWeather() else { return }
+
+        if RainAlertEvaluator.shouldWarn(previous: lastEvaluatedWeather, current: current) {
+            NotificationManager.shared.sendRainAlert(
+                message: RainAlertEvaluator.warningMessage(for: current)
+            )
+        }
+        lastEvaluatedWeather = current
     }
 
     func requestPauseOrResume() {
@@ -71,6 +108,8 @@ final class RideTrackingViewModel: ObservableObject {
     }
 
     func finish() async -> RideSummary {
+        stopRainMonitoring()
+
         if let finishedRide = tracker.finish() {
             ride = finishedRide
         }

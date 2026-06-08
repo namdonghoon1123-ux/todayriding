@@ -9,20 +9,26 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var recommendation: RidingRecommendation?
     @Published private(set) var isLoading = false
 
-    private let weatherService: WeatherService
-    private let airQualityService: AirQualityService
+    private let makeWeatherService: (GeoPoint) -> WeatherService
+    private let makeAirQualityService: (GeoPoint) -> AirQualityService
+    private var coordinate: GeoPoint
 
     init(
-        weatherService: WeatherService = MockWeatherService(),
-        airQualityService: AirQualityService = MockAirQualityService()
+        coordinate: GeoPoint = AppConfiguration.defaultCoordinate,
+        makeWeatherService: @escaping (GeoPoint) -> WeatherService = AppWeatherServiceFactory.make(coordinate:),
+        makeAirQualityService: @escaping (GeoPoint) -> AirQualityService = AppAirQualityServiceFactory.make(coordinate:)
     ) {
-        self.weatherService = weatherService
-        self.airQualityService = airQualityService
+        self.coordinate = coordinate
+        self.makeWeatherService = makeWeatherService
+        self.makeAirQualityService = makeAirQualityService
     }
 
     func load() async {
         isLoading = true
         defer { isLoading = false }
+
+        let weatherService = makeWeatherService(coordinate)
+        let airQualityService = makeAirQualityService(coordinate)
 
         do {
             async let weather = weatherService.currentWeather()
@@ -40,5 +46,14 @@ final class HomeViewModel: ObservableObject {
             // MVP: keep the screen usable with mock service defaults.
             recommendation = nil
         }
+    }
+
+    /// 실기기 GPS 좌표로 갱신. 위치가 충분히 바뀌었거나 아직 데이터가 없으면 다시 로드한다.
+    func updateCoordinate(_ newCoordinate: GeoPoint) async {
+        let movedEnough = DistanceCalculator.distanceMeters(from: coordinate, to: newCoordinate) > 100
+        guard movedEnough || weather == nil else { return }
+
+        coordinate = newCoordinate
+        await load()
     }
 }
