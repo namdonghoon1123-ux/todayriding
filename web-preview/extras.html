@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>오늘탈까 — 코치 / 리포트 / 코스 데모</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --surface: #11161d;
+      --surface2: #161c24;
+      --brand: #ff6b35;
+      --good: #3bd17f;
+      --ok: #e8b563;
+      --bad: #ff5247;
+      --text: #ffffff;
+      --secondary: #9aa3af;
+      --tertiary: #7c8694;
+      --line: rgba(255, 255, 255, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      min-height: 100svh;
+      padding-bottom: 40px;
+    }
+    .container {
+      width: min(100%, 430px);
+      margin: 0 auto;
+      padding: 18px 20px 32px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+    h2 {
+      font-size: 14px;
+      color: var(--tertiary);
+      margin: 28px 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    a.back {
+      color: var(--brand);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .pill-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .pill-tabs button {
+      border: 0;
+      background: var(--surface2);
+      color: var(--secondary);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .pill-tabs button.active {
+      background: var(--brand);
+      color: #fff;
+    }
+    /* Toggle row */
+    .toggle-row {
+      display: flex;
+      gap: 10px;
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .toggle-row .label {
+      flex: 1;
+    }
+    .toggle-row .title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .toggle-row .desc {
+      font-size: 12px;
+      color: var(--tertiary);
+      margin-top: 3px;
+    }
+    .switch {
+      width: 46px;
+      height: 28px;
+      background: var(--surface2);
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+      transition: background 200ms;
+    }
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 200ms;
+    }
+    .switch.on {
+      background: var(--brand);
+    }
+    .switch.on::after {
+      transform: translateX(18px);
+    }
+    /* Coach card */
+    .coach-card {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .coach-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .coach-headline {
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .coach-detail {
+      font-size: 12.5px;
+      color: var(--secondary);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .tone-encouraging { background: rgba(255, 107, 53, 0.16); color: var(--brand); }
+    .tone-reassuring { background: rgba(59, 209, 127, 0.16); color: var(--good); }
+    .tone-cautious { background: rgba(232, 181, 99, 0.16); color: var(--ok); }
+    .tone-recovery { background: rgba(124, 134, 148, 0.16); color: var(--secondary); }
+    /* Report */
+    .report-card {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .report-card .eyebrow {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .report-card .hero {
+      font-size: 40px;
+      font-weight: 800;
+      margin-top: 6px;
+    }
+    .report-card .hero small {
+      font-size: 16px;
+      color: var(--tertiary);
+      margin-left: 4px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .stat-cell {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .stat-cell label {
+      font-size: 11px;
+      color: var(--tertiary);
+      font-weight: 700;
+    }
+    .stat-cell strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+    }
+    .month-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .month-row .label {
+      flex: 1;
+    }
+    .month-row .label strong {
+      font-size: 14px;
+    }
+    .month-row .label small {
+      display: block;
+      color: var(--tertiary);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    .month-row .dist {
+      font-size: 17px;
+      font-weight: 800;
+    }
+    /* Course suggestion */
+    .suggestion-row {
+      display: flex;
+      gap: 12px;
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .suggestion-row .badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 107, 53, 0.16);
+      color: var(--brand);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .suggestion-row .label .reason {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--brand);
+    }
+    .suggestion-row .label .title {
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+    .suggestion-row .label .detail {
+      font-size: 12px;
+      color: var(--tertiary);
+      margin-top: 2px;
+    }
+    .disclaimer {
+      font-size: 11px;
+      color: var(--tertiary);
+      margin-top: 24px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <h1>오늘탈까 — 추가 기능 데모</h1>
+      <a class="back" href="./index.html">← 메인 흐름</a>
+    </div>
+
+    <div class="disclaimer">
+      iOS 앱의 새 기능을 정적 HTML로 미리보기 합니다. 실제 동작은
+      <code>swift test</code>와 Xcode/실기기에서 확인합니다.
+    </div>
+
+    <h2>홈 헤더 토글</h2>
+    <div class="toggle-row">
+      <div class="label">
+        <div class="title">매일 라이딩 추천 알림</div>
+        <div class="desc">매일 아침 7시 로컬 알림 (NotificationManager)</div>
+      </div>
+      <div class="switch on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="toggle-row">
+      <div class="label">
+        <div class="title">건강 앱에 사이클링 운동 저장</div>
+        <div class="desc">라이딩 종료 시 HKWorkout으로 저장 (HealthKitWorkoutRecorder)</div>
+      </div>
+      <div class="switch" onclick="this.classList.toggle('on')"></div>
+    </div>
+
+    <h2>AI 라이딩 코치 카드 — 톤별 예시</h2>
+    <div class="pill-tabs" id="coach-tabs">
+      <button class="active" data-tone="encouraging">기본 추천</button>
+      <button data-tone="reassuring">오랜만 라이딩</button>
+      <button data-tone="cautious">컨디션 주의</button>
+      <button data-tone="recovery">회복일 추천</button>
+    </div>
+    <div class="coach-card" id="coach-card">
+      <div class="coach-icon tone-encouraging">⚡</div>
+      <div>
+        <div class="coach-headline">오늘 컨디션 좋아요</div>
+        <div class="coach-detail">지난 30일 평균 14.2km. 오늘도 비슷한 거리 어떠세요?</div>
+      </div>
+    </div>
+
+    <h2>월간 / 연간 리포트</h2>
+    <div class="report-card">
+      <div class="eyebrow">누적</div>
+      <div class="hero">1,248<small>km</small></div>
+      <div class="stat-grid">
+        <div class="stat-cell"><label>횟수</label><strong>62회</strong></div>
+        <div class="stat-cell"><label>시간</label><strong>71:24:00</strong></div>
+        <div class="stat-cell"><label>평균 속도</label><strong>17.5 km/h</strong></div>
+        <div class="stat-cell"><label>최장 거리</label><strong>62.3 km</strong></div>
+      </div>
+    </div>
+    <div class="report-card">
+      <div class="eyebrow" style="color: var(--ok)">2026년</div>
+      <div class="hero" style="font-size: 30px;">478<small>km</small></div>
+      <div class="stat-grid">
+        <div class="stat-cell"><label>횟수</label><strong>21회</strong></div>
+        <div class="stat-cell"><label>시간</label><strong>28:12:00</strong></div>
+        <div class="stat-cell"><label>평균 속도</label><strong>18.1 km/h</strong></div>
+        <div class="stat-cell"><label>최장 거리</label><strong>52.0 km</strong></div>
+      </div>
+    </div>
+
+    <h2>최근 6개월</h2>
+    <div class="month-row">
+      <div class="label"><strong>2026.06</strong><small>4회 · 평균 18.3 km/h</small></div>
+      <div class="dist">81.2 <span class="muted" style="color:var(--tertiary);font-size:11px;">km</span></div>
+    </div>
+    <div class="month-row">
+      <div class="label"><strong>2026.05</strong><small>6회 · 평균 17.9 km/h</small></div>
+      <div class="dist">112.5 <span class="muted" style="color:var(--tertiary);font-size:11px;">km</span></div>
+    </div>
+    <div class="month-row">
+      <div class="label"><strong>2026.04</strong><small>5회 · 평균 17.1 km/h</small></div>
+      <div class="dist">95.0 <span class="muted" style="color:var(--tertiary);font-size:11px;">km</span></div>
+    </div>
+
+    <h2>다시 타기 좋은 코스</h2>
+    <div class="suggestion-row">
+      <div class="badge">↗</div>
+      <div class="label">
+        <div class="reason">최장 거리</div>
+        <div class="title">한강 → 능내역</div>
+        <div class="detail">62.3 km · 3시간 12분</div>
+      </div>
+    </div>
+    <div class="suggestion-row">
+      <div class="badge">⏰</div>
+      <div class="label">
+        <div class="reason">가장 최근</div>
+        <div class="title">출퇴근 라이딩</div>
+        <div class="detail">14.2 km · 48분</div>
+      </div>
+    </div>
+    <div class="suggestion-row">
+      <div class="badge">⚡</div>
+      <div class="label">
+        <div class="reason">최고 평균 속도</div>
+        <div class="title">야간 한강 인터벌</div>
+        <div class="detail">평균 28.4 km/h · 18.0 km</div>
+      </div>
+    </div>
+    <div class="suggestion-row">
+      <div class="badge">↻</div>
+      <div class="label">
+        <div class="reason">자주 다닌 코스</div>
+        <div class="title">집 출발 동네 한 바퀴</div>
+        <div class="detail">이 출발지에서 9회 라이딩 · 마지막 8.2 km</div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      각 카드의 동작 로직은 <code>Sources/TodayRidingCore/Utilities/RidingCoach.swift</code>,
+      <code>CourseSuggester.swift</code>, <code>RideStatisticsCalculator.swift</code>에 있고,
+      <code>Tests/TodayRidingCoreTests/</code>에 단위 테스트가 있습니다.
+    </div>
+  </div>
+
+  <script>
+    const coachData = {
+      encouraging: {
+        icon: "⚡",
+        tone: "tone-encouraging",
+        headline: "오늘 컨디션 좋아요",
+        detail: "지난 30일 평균 14.2km. 오늘도 비슷한 거리 어떠세요?"
+      },
+      reassuring: {
+        icon: "✓",
+        tone: "tone-reassuring",
+        headline: "한 달 만의 라이딩이에요",
+        detail: "오랜만이니 10km 내외로 가볍게 컨디션부터 점검해보세요."
+      },
+      cautious: {
+        icon: "!",
+        tone: "tone-cautious",
+        headline: "주의가 필요한 날",
+        detail: "비 가능성 있어 장거리 비추천. 짧게 다녀오는 것을 추천합니다."
+      },
+      recovery: {
+        icon: "Z",
+        tone: "tone-recovery",
+        headline: "이번 주 잘 타고 있어요",
+        detail: "회복을 위해 오늘은 짧게 타거나 쉬는 것도 좋아요."
+      }
+    };
+
+    document.querySelectorAll("#coach-tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#coach-tabs button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const tone = btn.getAttribute("data-tone");
+        const data = coachData[tone];
+        const card = document.getElementById("coach-card");
+        card.querySelector(".coach-icon").className = `coach-icon ${data.tone}`;
+        card.querySelector(".coach-icon").textContent = data.icon;
+        card.querySelector(".coach-headline").textContent = data.headline;
+        card.querySelector(".coach-detail").textContent = data.detail;
+      });
+    });
+  </script>
+</body>
+</html>
