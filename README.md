@@ -12,15 +12,23 @@
 
 - SwiftUI iOS 앱 프로젝트: `TodayRiding.xcodeproj`
 - 코어 Swift Package: `TodayRidingCore`
-- Mock 날씨/미세먼지 서비스
+- Mock 날씨/미세먼지 서비스 (키 없을 때 폴백)
+- 기상청 `KMAWeatherService` / 에어코리아 `AirKoreaService` 실제 API 연동 (키 주입 시)
+- 홈 화면 날씨/미세먼지 좌표를 단발성 GPS 위치로 연동 (미승인 시 기본 좌표)
 - 규칙 기반 라이딩 적합도 계산
 - GPS 포인트 기반 거리/시간/속도 계산
 - 파일 기반 로컬 임시 저장: `FileRideStore`
-- Supabase REST 업로드 서비스 초안: `HTTPSupabaseService`
+- Supabase REST 업로드 서비스: `HTTPSupabaseService`
 - Supabase 설정 주입 시 라이딩 종료 후 `rides`, `ride_points` 업로드 시도
+- 앱 실행 시 미동기화 라이딩 자동 재시도 + 기록 화면 수동 재시도 버튼
 - 공유 카드 미리보기, 이미지 렌더링, 사진 저장, iOS 공유 시트
-- 저장된 라이딩 기록 리스트와 요약 재진입
+- GPX 내보내기 (요약 화면 공유) : `GPXExporter`
+- 월간/연간 리포트 : 전체/연/월 통계, 개인 기록, 연속 라이딩 (`RideStatisticsCalculator`, `ReportView`)
+- 매일 라이딩 리마인더 + 라이딩 중 비구름 접근 알림 (`NotificationManager`, `RainAlertEvaluator`)
+- 백그라운드/잠금화면 위치 기록 (`UIBackgroundModes=location`)
+- 저장된 라이딩 기록 리스트(경로 썸네일 포함)와 요약 재진입
 - Supabase 스키마 초안: `supabase/schema.sql`
+- 코어 단위 테스트: `Tests/TodayRidingCoreTests` (Xcode), `swift run TodayRidingValidation` (CLI)
 
 ## 화면 테스트
 
@@ -99,6 +107,16 @@ Xcode에서 `TodayRiding` target의 Build Settings에 아래 사용자 정의 �
 테이블은 `supabase/schema.sql` 기준으로 생성한다.
 
 설정값이 비어 있으면 라이딩은 로컬에 저장되고 `pending` 상태로 남는다. 설정값이 있으면 라이딩 종료 시 Supabase REST API로 `rides`, `ride_points` 업로드를 시도한다.
+
+## 날씨 / 미세먼지 설정
+
+data.go.kr 일반 인증키(Decoding)를 Build Settings에 주입한다. 자세한 내용은 `docs/xcode-setup.md` 참고.
+
+- `TODAYRIDING_KMA_API_KEY`: 기상청 단기예보 조회서비스 키
+- `TODAYRIDING_AIRKOREA_API_KEY`: 에어코리아 대기오염정보 키
+- `TODAYRIDING_AIRKOREA_STATION`: (선택) 고정 측정소명
+
+키가 없으면 Mock 데이터로 동작한다.
 
 ## 문서
 

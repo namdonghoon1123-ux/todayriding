@@ -30,16 +30,23 @@ struct RideHistoryView: View {
                 } else {
                     VStack(spacing: 12) {
                         ForEach(viewModel.rides) { ride in
-                            Button {
-                                Task {
-                                    if let summary = await viewModel.summary(for: ride) {
-                                        onSelect(summary)
+                            RideHistoryRow(
+                                ride: ride,
+                                points: viewModel.pointsByRide[ride.id] ?? [],
+                                isSyncing: viewModel.syncingRideID == ride.id,
+                                canRetry: viewModel.canSync
+                                    && (ride.syncStatus == .pending || ride.syncStatus == .failed),
+                                onSelect: {
+                                    Task {
+                                        if let summary = await viewModel.summary(for: ride) {
+                                            onSelect(summary)
+                                        }
                                     }
+                                },
+                                onRetry: {
+                                    Task { await viewModel.retry(ride) }
                                 }
-                            } label: {
-                                RideHistoryRow(ride: ride)
-                            }
-                            .buttonStyle(.plain)
+                            )
                         }
                     }
                 }
@@ -114,52 +121,125 @@ struct RideHistoryView: View {
 
 private struct RideHistoryRow: View {
     let ride: Ride
+    let points: [RidePoint]
+    let isSyncing: Bool
+    let canRetry: Bool
+    let onSelect: () -> Void
+    let onRetry: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            RouteThumbnail()
-                .frame(width: 64, height: 64)
+            Button(action: onSelect) {
+                HStack(spacing: 12) {
+                    RouteThumbnail(points: points)
+                        .frame(width: 64, height: 64)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 7) {
-                    Text(ride.title ?? "오늘 라이딩")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 7) {
+                            Text(ride.title ?? "오늘 라이딩")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
 
-                    SyncStatusPill(status: ride.syncStatus)
+                            SyncStatusPill(status: ride.syncStatus)
+                        }
+
+                        Text(AppFormatters.date(ride.startedAt))
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(AppTheme.textTertiary)
+
+                        Text("\(AppFormatters.distanceKm(ride.distanceMeters)) km · \(AppFormatters.duration(ride.durationSeconds)) · \(AppFormatters.speedKmh(ride.averageSpeedKmh)) km/h")
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 0)
                 }
-
-                Text(AppFormatters.date(ride.startedAt))
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(AppTheme.textTertiary)
-
-                Text("\(AppFormatters.distanceKm(ride.distanceMeters)) km · \(AppFormatters.duration(ride.durationSeconds)) · \(AppFormatters.speedKmh(ride.averageSpeedKmh)) km/h")
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(AppTheme.textSecondary)
-                    .lineLimit(1)
             }
+            .buttonStyle(.plain)
 
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(AppTheme.textTertiary)
+            trailing
         }
         .padding(12)
         .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 18))
     }
+
+    @ViewBuilder
+    private var trailing: some View {
+        if isSyncing {
+            ProgressView()
+                .tint(AppTheme.brand)
+                .frame(width: 36, height: 36)
+        } else if canRetry {
+            Button(action: onRetry) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(AppTheme.brand)
+                    .frame(width: 36, height: 36)
+                    .background(AppTheme.brand.opacity(0.16), in: Circle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(AppTheme.textTertiary)
+        }
+    }
 }
 
 private struct RouteThumbnail: View {
+    let points: [RidePoint]
+
     var body: some View {
         ZStack {
             AppTheme.surface2
-            Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(AppTheme.brand)
+
+            if points.count > 1 {
+                GeometryReader { proxy in
+                    Path { path in
+                        let mapped = RouteThumbnail.normalized(points: points, in: proxy.size, inset: 10)
+                        guard let first = mapped.first else { return }
+                        path.move(to: first)
+                        for point in mapped.dropFirst() {
+                            path.addLine(to: point)
+                        }
+                    }
+                    .stroke(
+                        AppTheme.brand,
+                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
+                    )
+                }
+            } else {
+                Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(AppTheme.brand)
+            }
         }
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private static func normalized(points: [RidePoint], in size: CGSize, inset: CGFloat) -> [CGPoint] {
+        let coordinates = points.map(\.coordinate)
+        guard let minLatitude = coordinates.map(\.latitude).min(),
+              let maxLatitude = coordinates.map(\.latitude).max(),
+              let minLongitude = coordinates.map(\.longitude).min(),
+              let maxLongitude = coordinates.map(\.longitude).max()
+        else {
+            return []
+        }
+
+        let latitudeSpan = max(maxLatitude - minLatitude, 0.0001)
+        let longitudeSpan = max(maxLongitude - minLongitude, 0.0001)
+
+        return coordinates.map { coordinate in
+            let x = (coordinate.longitude - minLongitude) / longitudeSpan
+            let y = 1 - (coordinate.latitude - minLatitude) / latitudeSpan
+            return CGPoint(
+                x: inset + CGFloat(x) * (size.width - inset * 2),
+                y: inset + CGFloat(y) * (size.height - inset * 2)
+            )
+        }
     }
 }
 

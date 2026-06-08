@@ -17,6 +17,10 @@ let package = Package(
         .executableTarget(
             name: "TodayRidingValidation",
             dependencies: ["TodayRidingCore"]
+        ),
+        .testTarget(
+            name: "TodayRidingCoreTests",
+            dependencies: ["TodayRidingCore"]
         )
     ]
 )

@@ -49,6 +49,11 @@ Privacy - Photo Library Additions Usage Description
 공유 카드를 사진 앱에 저장하기 위해 권한이 필요합니다.
 ```
 
+백그라운드 위치 기록을 위해 `UIBackgroundModes`에 `location`이 빌드 설정으로 주입돼 있다.
+라이딩 트래킹 중에는 잠금화면/백그라운드에서도 위치가 기록되며 상단에 위치 표시기가 나타난다.
+
+알림(매일 리마인더, 비구름 접근 경고)은 앱 첫 실행 시 권한을 요청한다. 권한 문구는 시스템 기본값을 사용한다.
+
 ## 터미널 검증
 
 화면이 아니라 코어 로직만 확인하려면 아래 명령을 사용한다.
@@ -61,6 +66,15 @@ swift run TodayRidingValidation
 
 ```text
 TodayRidingValidation passed
+```
+
+`TodayRidingValidation`은 거리/점수/트래커/저장소뿐 아니라 기상청 격자 변환, 일몰 계산,
+TM 좌표 변환, 풍향/강수형태/체감온도 계산까지 검증한다. Command Line Tools만 있어도 실행된다.
+
+XCTest 기반 테스트(`Tests/TodayRidingCoreTests`)는 XCTest 모듈이 필요해 **Xcode 설치 후**에만 동작한다.
+
+```sh
+swift test
 ```
 
 ## Supabase 설정
@@ -82,3 +96,26 @@ TODAYRIDING_SUPABASE_ANON_KEY
 ```
 
 값이 없으면 라이딩은 로컬 JSON 저장소에 남고 `pending` 상태가 된다. 값이 있으면 라이딩 종료 시 `rides`, `ride_points` 테이블 업로드를 시도한다.
+
+앱 실행 시 `pending`/`failed` 상태의 라이딩은 자동으로 재업로드를 시도하며, 기록 화면에서 각 항목의 재시도 버튼으로 수동 재시도도 가능하다.
+
+## 날씨 / 미세먼지 API 설정
+
+기상청·에어코리아 키도 저장소에 커밋하지 않는다. data.go.kr에서 발급한 **일반 인증키(Decoding)** 를 사용한다.
+
+`TodayRiding` target Build Settings에 추가한다.
+
+```text
+TODAYRIDING_KMA_API_KEY = <기상청 단기예보 조회서비스 Decoding 키>
+TODAYRIDING_AIRKOREA_API_KEY = <에어코리아 대기오염정보 Decoding 키>
+TODAYRIDING_AIRKOREA_STATION = <선택: 고정 측정소명(예: 성수동). 비우면 좌표 기준 최근접 측정소 사용>
+```
+
+앱은 generated Info.plist의 동일 키로 값을 읽는다. 키가 없으면 `MockWeatherService`,
+`MockAirQualityService`로 폴백한다.
+
+- 기상청: 초단기실황(기온/습도/풍속/풍향/강수형태) + 단기예보(강수확률/하늘상태), 일몰은 좌표 기반 천문 계산
+- 에어코리아: 좌표 → TM 변환 → 최근접 측정소 → 실시간 PM10/PM2.5
+
+> 현재 좌표는 서울시청 기본값을 사용한다. 실기기 GPS 연동은 후속 작업이다.(`TODO.md`)
+> 두 API의 실제 응답 정합성(특히 에어코리아 TM 좌표계)은 실제 키로 검증이 필요하다.

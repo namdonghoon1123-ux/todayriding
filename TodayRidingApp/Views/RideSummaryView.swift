@@ -3,6 +3,7 @@ import TodayRidingCore
 
 struct RideSummaryView: View {
     @StateObject private var viewModel: RideSummaryViewModel
+    @State private var gpxURL: URL?
     let onShare: (RideSummary) -> Void
     let onDone: () -> Void
 
@@ -40,10 +41,23 @@ struct RideSummaryView: View {
             .background(AppTheme.background.opacity(0.92))
         }
         .toolbar {
+            if let gpxURL {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(item: gpxURL) {
+                        Image(systemName: "square.and.arrow.up.on.square")
+                            .foregroundStyle(AppTheme.brand)
+                    }
+                    .accessibilityLabel("GPX 내보내기")
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button("완료", action: onDone)
                     .foregroundStyle(AppTheme.brand)
             }
+        }
+        .task {
+            gpxURL = viewModel.exportGPXFile()
         }
         .background(AppTheme.background.ignoresSafeArea())
     }

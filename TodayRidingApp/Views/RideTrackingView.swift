@@ -95,9 +95,11 @@ struct RideTrackingView: View {
         .onAppear {
             locationManager.requestAuthorization()
             locationManager.startUpdating()
+            viewModel.startRainMonitoring()
         }
         .onDisappear {
             locationManager.stopUpdating()
+            viewModel.stopRainMonitoring()
         }
         .onReceive(locationManager.$latestLocation.compactMap { $0 }) { location in
             viewModel.record(location: location)
