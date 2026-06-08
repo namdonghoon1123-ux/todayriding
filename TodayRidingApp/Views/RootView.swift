@@ -12,6 +12,7 @@ struct RootView: View {
     @State private var shareSummary: RideSummary?
     @State private var isShowingHistory = false
     @State private var isShowingReport = false
+    @State private var isShowingCourses = false
 
     var body: some View {
         NavigationStack {
@@ -62,6 +63,10 @@ struct RootView: View {
             ShareCardView(summary: shareSummary) {
                 self.shareSummary = nil
             }
+        } else if isShowingCourses {
+            CoursePlannerView(currentUserID: authController.currentUserID) {
+                isShowingCourses = false
+            }
         } else if isShowingReport {
             ReportView(localStore: localStore) {
                 self.isShowingReport = false
@@ -100,6 +105,7 @@ struct RootView: View {
                 },
                 onShowHistory: { isShowingHistory = true },
                 onShowReport: { isShowingReport = true },
+                onShowCourses: { isShowingCourses = true },
                 onSignOut: { Task { await authController.signOut() } }
             )
         }
