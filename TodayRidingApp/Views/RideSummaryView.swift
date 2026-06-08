@@ -63,16 +63,29 @@ struct RideSummaryView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("오늘탔다")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(AppTheme.brand)
-            Text(viewModel.summary.ride.title ?? "오늘 라이딩")
-                .font(.system(size: 30, weight: .bold))
-                .foregroundStyle(.white)
-            Text(AppFormatters.date(viewModel.summary.ride.startedAt))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(AppTheme.textTertiary)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("오늘탔다")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(AppTheme.brand)
+                Text(viewModel.summary.ride.title ?? "오늘 라이딩")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(AppFormatters.date(viewModel.summary.ride.startedAt))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+
+            Spacer()
+
+            Button(action: onDone) {
+                Text("완료")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(AppTheme.brand)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(AppTheme.surface2, in: Capsule())
+            }
         }
     }
 
