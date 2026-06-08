@@ -73,33 +73,41 @@ Xcode에서:
 - 📊 리포트 보기 (월간/연간 통계 + 코스 추천)
 - 🕐 기록 보기
 
-## 웹 미리보기
+## 테스트 / 검증 가이드
 
-Xcode 설치 전에도 기본 화면 흐름은 브라우저에서 확인할 수 있다.
+Xcode 없이 가능한 것 vs 꼭 필요한 것을 구분해두자.
 
-```sh
-open /Volumes/Extreme_SSD/todayriding/web-preview/index.html
-```
+### Xcode 없이 가능
 
-또는:
+| 무엇 | 명령 | 검증 범위 |
+|------|------|----------|
+| 코어 로직 단위 테스트 | `swift test` | 57+ XCTest cases (Tracker, FileStore, Sync, GPX, Statistics, Coach, Suggester, KMA grid/solar/TM, 강수 알림 평가 등) |
+| End-to-end 흐름 (CLI) | `swift run TodayRidingValidation` | 위 검증의 CLI 형태 + 의도적인 회귀 픽스처 |
+| 화면 흐름 미리보기 | `open web-preview/index.html` | 라이딩 시작→트래킹→요약→공유→기록 |
+| 새 기능 미리보기 | `open web-preview/extras.html` | 코치 카드 4톤, 리포트, 코스 추천, HealthKit 토글 |
 
-```sh
-cd /Volumes/Extreme_SSD/todayriding/web-preview
-python3 -m http.server 8080
-```
+### Xcode / 시뮬레이터 필요
 
-브라우저에서 `http://127.0.0.1:8080/index.html`.
+- iOS 앱 빌드 (`xcodebuild ... -sdk iphonesimulator`)
+- SwiftUI 화면 라이브 미리보기
+- `RideTrackingViewModel` 통합 (LocationManager + WeatherService + HealthKit)
 
-웹 미리보기는 화면/상호작용 확인용이다. 실제 GPS, 사진 저장, Supabase 업로드, HealthKit, 알림은 iOS 앱에서 검증한다.
+### 실기기 필요
 
-## 코어 검증
+- GPS 추적 정확도
+- 백그라운드/잠금화면 위치 기록
+- 사진 라이브러리 저장 + iOS 공유 시트
+- HealthKit 사이클링 워크아웃 저장
+- 로컬 알림 수신 (매일 7시 / 강수확률 상승)
 
-```sh
-swift run TodayRidingValidation
-swift test                       # XCTest 41+ cases
-```
+### CI (GitHub Actions)
 
-성공 시 `TodayRidingValidation passed` 및 `Executed N tests` 출력.
+`.github/workflows/ci.yml` 가 PR/푸시마다 자동 실행:
+1. **Core validation (macOS)** — `swift test` + `swift run TodayRidingValidation`
+2. **Core validation (Linux)** — Ubuntu container의 `swift:6.0-jammy`로 같은 검증 (코어가 macOS 외 플랫폼에서도 빌드되는지 보증)
+3. **iOS Simulator build** — `xcodebuild` 시뮬레이터 빌드 (서명 없이)
+
+CI 통과 = 화면 외 모든 로직이 정상.
 
 ## Build Settings 주입
 
