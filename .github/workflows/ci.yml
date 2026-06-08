@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  core-validation:
+    name: Core validation (Swift Package)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Run TodayRidingValidation
+        run: swift run TodayRidingValidation
+
+  ios-simulator-build:
+    name: iOS Simulator build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: List available iOS Simulator destinations
+        run: |
+          xcrun simctl list devices available | head -40 || true
+          xcodebuild -showsdks | head -20 || true
+
+      - name: Build TodayRiding (iOS Simulator)
+        run: |
+          DESTINATION="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone [0-9]+ \(/ {print $2; exit}')"
+          if [ -z "$DESTINATION" ]; then
+            DESTINATION="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone / {print $2; exit}')"
+          fi
+          echo "Using destination id: $DESTINATION"
+          xcodebuild \
+            -project TodayRiding.xcodeproj \
+            -scheme TodayRiding \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$DESTINATION" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
