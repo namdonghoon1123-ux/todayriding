@@ -5,3 +5,8 @@
 xcuserdata/
 DerivedData/
 .playwright-mcp/
+
+# Local secrets — never commit
+secrets.local.md
+secrets.local.*
+*.local.env

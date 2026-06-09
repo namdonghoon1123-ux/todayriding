@@ -296,6 +296,60 @@ func validateRideStatistics() {
     assert(empty == .empty, "Empty rides should produce empty report")
 }
 
+func validateRidingCoach() {
+    let now = Date(timeIntervalSince1970: 2_000_000_000)
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Asia/Seoul") ?? .current
+
+    // Empty history -> encouraging
+    let firstAdvice = RidingCoach.advice(rides: [], recommendation: nil, now: now, calendar: calendar)
+    assert(firstAdvice.tone == .encouraging, "Empty rides should give encouraging tone, got \(firstAdvice.tone)")
+
+    // 45-day absence -> reassuring
+    let longAgo = Ride(startedAt: now.addingTimeInterval(-60 * 60 * 24 * 45), distanceMeters: 10_000)
+    let longAdvice = RidingCoach.advice(rides: [longAgo], recommendation: nil, now: now, calendar: calendar)
+    assert(longAdvice.tone == .reassuring, "Long absence should give reassuring tone, got \(longAdvice.tone)")
+
+    // 4+ rides this week -> recoveryReminder
+    let week = (0..<4).map { offset in
+        Ride(startedAt: now.addingTimeInterval(-Double(offset) * 60 * 60 * 24), distanceMeters: 8_000)
+    }
+    let recoveryAdvice = RidingCoach.advice(rides: week, recommendation: nil, now: now, calendar: calendar)
+    assert(recoveryAdvice.tone == .recoveryReminder, "Overtraining should give recoveryReminder tone, got \(recoveryAdvice.tone)")
+}
+
+func validateCourseSuggester() {
+    let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
+    let shortRide = Ride(
+        startedAt: baseDate,
+        durationSeconds: 600,
+        distanceMeters: 5_000,
+        averageSpeedKmh: 12,
+        startCoordinate: GeoPoint(latitude: 37.5445, longitude: 127.0557)
+    )
+    let longRide = Ride(
+        startedAt: baseDate.addingTimeInterval(60 * 60 * 24),
+        durationSeconds: 3_600,
+        distanceMeters: 30_000,
+        averageSpeedKmh: 20,
+        startCoordinate: GeoPoint(latitude: 37.5445, longitude: 127.0557)
+    )
+    let fastRide = Ride(
+        startedAt: baseDate.addingTimeInterval(60 * 60 * 24 * 2),
+        durationSeconds: 1_800,
+        distanceMeters: 12_000,
+        averageSpeedKmh: 28,
+        startCoordinate: GeoPoint(latitude: 37.5445, longitude: 127.0557)
+    )
+
+    let suggestions = CourseSuggester.suggest(from: [shortRide, longRide, fastRide])
+    assert(suggestions.contains(where: { $0.reason == .longest && $0.ride.id == longRide.id }), "Longest should pick longRide")
+    assert(suggestions.contains(where: { $0.reason == .mostRecent && $0.ride.id == fastRide.id }), "Most recent (after longest is taken) should pick fastRide")
+    assert(suggestions.contains(where: { $0.reason == .fastest }), "Fastest reason should appear")
+
+    assert(CourseSuggester.suggest(from: []).isEmpty, "Empty input should yield no suggestions")
+}
+
 func validateWeatherMath() {
     assert(WeatherMath.windDirection(degrees: 0) == "북풍", "0deg should be 북풍")
     assert(WeatherMath.windDirection(degrees: 90) == "동풍", "90deg should be 동풍")
@@ -324,5 +378,7 @@ validateWeatherMath()
 validateGPXExporter()
 validateRideStatistics()
 validateRainAlertEvaluator()
+validateRidingCoach()
+validateCourseSuggester()
 
 print("TodayRidingValidation passed")

@@ -1,5 +1,17 @@
 # TODO
 
+## 멀티 사용자 (Supabase Auth)
+
+- [x] `supabase/schema.sql` — user_id NOT NULL + RLS 정책 (rides/ride_points/ride_photos)
+- [x] `SupabaseAuthService` (signUp/signIn/refresh/signOut REST) + `AuthSession` 모델
+- [x] `InMemoryAuthSessionStore` (Linux/CI) + `KeychainAuthSessionStore` (iOS)
+- [x] `AuthStateController` — bootstrap·자동 토큰 갱신·로그인/로그아웃
+- [x] `AuthView` — 이메일/패스워드 회원가입·로그인 SwiftUI
+- [x] `RootView` 분기 (미로그인 → AuthView, 로그인 → 메인 흐름)
+- [x] `RideSyncService` Bearer JWT + user_id 자동 주입
+- [x] 홈 화면 로그아웃 버튼
+- [x] XCTest (AuthSession 만료/Codable, InMemoryAuthSessionStore, NoopSupabaseAuthService)
+
 ## 1차 MVP 후속
 
 ### 코드 구현 완료 (실기기/실키 검증 필요)
@@ -15,19 +27,20 @@
 - [x] 앱 재실행 시 `pending`/`failed` 라이딩 자동 재시도 (`RootView`)
 - [x] 기록 리스트에서 실제 경로 썸네일 렌더링
 - [x] 날씨/미세먼지 좌표를 실기기 GPS 위치로 연동
-  - `LocationManager.requestOneShotLocation` + `HomeViewModel.updateCoordinate`, 미승인 시 서울시청 기본 좌표
 - [x] GPX 내보내기 (`GPXExporter` + 요약 화면 `ShareLink`)
 - [x] 월간/연간 리포트 (`RideStatisticsCalculator` + `ReportView`)
-  - 전체/연/월 통계, 개인 기록, 연속 라이딩(스트릭) 집계. 홈 우상단 리포트 버튼
-- [x] 코어 단위 테스트 추가 (`Tests/TodayRidingCoreTests`, Xcode 필요)
+- [x] 코어 단위 테스트 추가 (`Tests/TodayRidingCoreTests`, `swift test`)
 
 ### 실기기 / Xcode 검증 대기
 
-- [ ] Supabase 프로젝트 생성 후 URL/anon key 주입 및 실기기 업로드 테스트
+- [ ] Supabase 프로젝트 SQL Editor에 `supabase/schema.sql` 적용 (RLS 포함)
+- [ ] Xcode Build Settings에 `TODAYRIDING_SUPABASE_URL` / `TODAYRIDING_SUPABASE_ANON_KEY` 주입
+- [ ] 두 명 회원가입 → 각자 라이딩 → Supabase Table Editor에서 user_id별로 row 분리 확인
 - [ ] 기상청/에어코리아 실제 키 주입 후 라이브 응답 검증
 - [ ] 실기기 GPS 기록 테스트 (홈 위치 권한 + 라이딩 트래킹)
 - [ ] 사진 저장 권한 실제 기기 테스트
-- [ ] Xcode 설치 후 iOS Simulator 빌드 검증 + `swift test` 실행
+- [ ] 매일 7시 알림 수신 확인
+- [ ] HealthKit 권한 허용 + 라이딩 종료 후 건강 앱 저장 확인
 
 ### 기술 부채
 
@@ -39,14 +52,31 @@
 ### 코드 구현 완료 (실기기/권한 검증 필요)
 
 - [x] 백그라운드/잠금화면 위치 기록
-  - `LocationManager` 백그라운드 업데이트 + Info.plist `UIBackgroundModes=location`
+  - `LocationManager` 백그라운드 업데이트 + `UIBackgroundModes=location`
 - [x] 알림 기능 (매일 라이딩 리마인더)
   - `NotificationManager` + 앱 실행 시 권한 요청/예약
 - [x] 라이딩 중 비구름 접근 알림
-  - `RainAlertEvaluator`(Core, 검증됨) + 라이딩 중 주기적 날씨 재확인 → 로컬 알림
+  - `RainAlertEvaluator` + 라이딩 중 주기적 날씨 재확인 → 로컬 알림
+- [x] HealthKit 연동 (`HealthKitWorkoutRecorder`)
+  - 사이클링 워크아웃 자동 저장, 홈 헤더 ❤️ 토글, entitlement 추가
+- [x] 코스 추천 (`CourseSuggester`)
+  - 과거 라이딩에서 최장/최근/최고속/자주 다닌 출발지 4개를 리포트 화면 하단에 노출
+- [x] AI 라이딩 코치 (`RidingCoach`)
+  - 규칙 기반 — 최근 통계 + 추천 점수로 톤별 코칭 카드 (홈 화면)
+- [x] GitHub Actions CI (`.github/workflows/ci.yml`)
+  - macos-15 / `swift run TodayRidingValidation` + iOS Simulator build
 
-### 미착수 (외부 키/계정/데이터 필요)
+### 미착수 / 차후 검토
 
-- [ ] HealthKit 연동 (entitlement·실기기 필요)
-- [ ] 코스 추천 (외부 코스/지도 데이터 필요)
-- [ ] AI 라이딩 코치 (LLM API 연동 필요)
+- [ ] LLM 기반 코치 (현재 코치는 규칙 기반. LLM 연동 시 더 자연스러운 메시지 가능)
+- [ ] 외부 코스/지도 데이터 기반 추천 (현재는 과거 라이딩만 사용)
+- [ ] iOS Widget / Live Activity / Apple Watch 컴패니언
+- [ ] 앱 아이콘 / 런치 스크린 디자인 자산
+- [ ] App Store 메타데이터 (이름·설명·스크린샷·개인정보 처리방침)
+
+## 다음 추천 작업 (사용자)
+
+1. `feature/healthkit-coach-courses-ci` PR 머지
+2. Supabase 프로젝트 + `supabase/schema.sql` 적용
+3. Xcode Build Settings에 4개 API 키 주입
+4. 실기기 검증 (위 "실기기 / Xcode 검증 대기" 항목들)

@@ -9,7 +9,7 @@ struct RideTrackingView: View {
     var body: some View {
         VStack(spacing: 0) {
             ZStack(alignment: .top) {
-                RoutePreview(points: viewModel.points)
+                RideMapView(points: viewModel.points)
                     .frame(maxWidth: .infinity)
                     .frame(height: 360)
                     .ignoresSafeArea(edges: .top)
@@ -107,17 +107,23 @@ struct RideTrackingView: View {
     }
 
     private var recordingPill: some View {
-        HStack(spacing: 8) {
+        let isPaused = viewModel.trackingState == .paused
+        return HStack(spacing: 8) {
             Circle()
-                .fill(Color.red)
+                .fill(isPaused ? AppTheme.ok : Color.red)
                 .frame(width: 8, height: 8)
-            Text(viewModel.trackingState == .paused ? "일시정지" : "기록 중")
+                .opacity(isPaused ? 0.6 : 1)
+            Text(isPaused ? "일시정지" : "기록 중")
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(isPaused ? AppTheme.ok : .white)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
         .background(AppTheme.background.opacity(0.72), in: Capsule())
+        .overlay(
+            Capsule()
+                .stroke(isPaused ? AppTheme.ok.opacity(0.6) : Color.clear, lineWidth: 1)
+        )
     }
 
     private var distanceHero: some View {

@@ -3,9 +3,15 @@ import TodayRidingCore
 
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
+    @AppStorage(HealthKitWorkoutRecorder.isEnabledDefaultsKey)
+    private var healthKitEnabled = false
+    @State private var healthKitToast: String?
+    @State private var presentedDetail: MetricDetail?
     let onStartRide: () -> Void
     let onShowHistory: () -> Void
     let onShowReport: () -> Void
+    var onShowCourses: (() -> Void)? = nil
+    var onSignOut: (() -> Void)? = nil
 
     var body: some View {
         ScrollView {
@@ -18,7 +24,9 @@ struct HomeView: View {
                     scoreHeader(recommendation)
                     messageRow(recommendation.message)
                     metricGrid(weather: weather, airQuality: airQuality)
-                    sunsetRow(weather)
+                    if let advice = viewModel.coachAdvice {
+                        coachCard(advice)
+                    }
                 } else {
                     ProgressView()
                         .tint(AppTheme.brand)
@@ -40,6 +48,22 @@ struct HomeView: View {
         .task {
             await viewModel.load()
         }
+        .alert(
+            "건강 앱",
+            isPresented: Binding(
+                get: { healthKitToast != nil },
+                set: { isPresented in
+                    if !isPresented { healthKitToast = nil }
+                }
+            )
+        ) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text(healthKitToast ?? "")
+        }
+        .sheet(item: $presentedDetail) { detail in
+            MetricDetailSheet(detail: detail)
+        }
     }
 
     private var header: some View {
@@ -52,6 +76,26 @@ struct HomeView: View {
 
             Spacer()
 
+            Button(action: toggleHealthKit) {
+                Image(systemName: healthKitEnabled ? "heart.fill" : "heart")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(healthKitEnabled ? AppTheme.bad : AppTheme.textTertiary)
+                    .frame(width: 40, height: 40)
+                    .background(AppTheme.surface2, in: Circle())
+            }
+            .accessibilityLabel(healthKitEnabled ? "건강 앱 저장 끄기" : "건강 앱 저장 켜기")
+
+            if let onShowCourses {
+                Button(action: onShowCourses) {
+                    Image(systemName: "map.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(AppTheme.brand)
+                        .frame(width: 40, height: 40)
+                        .background(AppTheme.surface2, in: Circle())
+                }
+                .accessibilityLabel("코스 짜기")
+            }
+
             Button(action: onShowReport) {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 16, weight: .bold))
@@ -60,6 +104,17 @@ struct HomeView: View {
                     .background(AppTheme.surface2, in: Circle())
             }
             .accessibilityLabel("리포트 보기")
+
+            if let onSignOut {
+                Button(action: onSignOut) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .frame(width: 40, height: 40)
+                        .background(AppTheme.surface2, in: Circle())
+                }
+                .accessibilityLabel("로그아웃")
+            }
 
             Button(action: onShowHistory) {
                 Image(systemName: "clock.arrow.circlepath")
@@ -73,6 +128,20 @@ struct HomeView: View {
             Text(AppFormatters.date(Date()))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(AppTheme.textTertiary)
+        }
+    }
+
+    private func toggleHealthKit() {
+        Task {
+            if healthKitEnabled {
+                HealthKitWorkoutRecorder.disable()
+                healthKitToast = "건강 앱 저장을 껐습니다."
+            } else {
+                let granted = await HealthKitWorkoutRecorder.enable()
+                healthKitToast = granted
+                    ? "라이딩 종료 시 건강 앱에 사이클링 운동이 저장됩니다."
+                    : "건강 앱 권한이 필요합니다. 설정에서 권한을 허용해주세요."
+            }
         }
     }
 
@@ -111,50 +180,92 @@ struct HomeView: View {
 
     private func metricGrid(weather: WeatherSnapshot, airQuality: AirQualitySnapshot) -> some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            MetricChip(
-                icon: "thermometer.medium",
-                title: "기온",
-                value: String(format: "%.0f", weather.temperatureCelsius),
-                unit: "도"
-            )
-            MetricChip(
-                icon: "wind",
-                title: "바람",
-                value: String(format: "%.1f", weather.windSpeedMps),
-                unit: "m/s"
-            )
-            MetricChip(
-                icon: "cloud.rain.fill",
-                title: "강수",
-                value: "\(weather.precipitationProbabilityPercent)",
-                unit: "%"
-            )
-            MetricChip(
-                icon: "aqi.medium",
-                title: "초미세",
-                value: "\(airQuality.pm25)",
-                unit: "PM2.5"
-            )
-            MetricChip(
-                icon: "humidity.fill",
-                title: "습도",
-                value: "\(weather.humidityPercent)",
-                unit: "%"
-            )
-            MetricChip(
-                icon: "sun.max.fill",
-                title: "하늘",
-                value: weather.skyCondition,
-                unit: weather.precipitationType.label
-            )
+            metricButton(detail: MetricDetail.temperature(weather)) {
+                MetricChip(icon: "thermometer.medium", title: "기온",
+                           value: String(format: "%.0f", weather.temperatureCelsius), unit: "도")
+            }
+            metricButton(detail: MetricDetail.wind(weather)) {
+                MetricChip(icon: "wind", title: "바람",
+                           value: String(format: "%.1f", weather.windSpeedMps), unit: "m/s")
+            }
+            metricButton(detail: MetricDetail.precipitation(weather)) {
+                MetricChip(icon: "cloud.rain.fill", title: "강수",
+                           value: "\(weather.precipitationProbabilityPercent)", unit: "%")
+            }
+            metricButton(detail: MetricDetail.pm25(airQuality)) {
+                MetricChip(icon: "aqi.medium", title: "초미세",
+                           value: "\(airQuality.pm25)", unit: "PM2.5")
+            }
+            metricButton(detail: MetricDetail.humidity(weather)) {
+                MetricChip(icon: "humidity.fill", title: "습도",
+                           value: "\(weather.humidityPercent)", unit: "%")
+            }
+            metricButton(detail: MetricDetail.sky(weather)) {
+                MetricChip(icon: "sun.max.fill", title: "하늘",
+                           value: weather.skyCondition, unit: weather.precipitationType.label)
+            }
+            if let uv = viewModel.uvIndex {
+                metricButton(detail: MetricDetail.uvIndex(uv)) {
+                    MetricChip(icon: "sun.max.trianglebadge.exclamationmark.fill",
+                               title: "자외선", value: "\(uv.value)", unit: uv.category.label)
+                }
+            }
+            metricButton(detail: MetricDetail.sunset(weather)) {
+                MetricChip(icon: "sunset.fill", title: "일몰",
+                           value: AppFormatters.time(weather.sunsetAt), unit: "KST")
+            }
         }
     }
 
-    private func sunsetRow(_ weather: WeatherSnapshot) -> some View {
-        Label("일몰 \(AppFormatters.time(weather.sunsetAt)) · 야간 라이트 권장", systemImage: "sunset.fill")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(AppTheme.textTertiary)
-            .tint(AppTheme.ok)
+    private func metricButton<Content: View>(detail: MetricDetail, @ViewBuilder content: () -> Content) -> some View {
+        Button {
+            presentedDetail = detail
+        } label: {
+            content()
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func coachCard(_ advice: RidingCoachAdvice) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon(for: advice.tone))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(toneColor(for: advice.tone))
+                .frame(width: 36, height: 36)
+                .background(toneColor(for: advice.tone).opacity(0.16), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(advice.headline)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(advice.detail)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func icon(for tone: RidingCoachAdvice.Tone) -> String {
+        switch tone {
+        case .encouraging: return "bolt.heart.fill"
+        case .reassuring: return "checkmark.seal.fill"
+        case .cautious: return "exclamationmark.triangle.fill"
+        case .recoveryReminder: return "bed.double.fill"
+        }
+    }
+
+    private func toneColor(for tone: RidingCoachAdvice.Tone) -> Color {
+        switch tone {
+        case .encouraging: return AppTheme.brand
+        case .reassuring: return AppTheme.good
+        case .cautious: return AppTheme.ok
+        case .recoveryReminder: return AppTheme.textSecondary
+        }
     }
 
     private func color(for grade: RidingScoreGrade) -> Color {

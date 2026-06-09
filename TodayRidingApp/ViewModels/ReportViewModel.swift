@@ -5,6 +5,7 @@ import TodayRidingCore
 @MainActor
 final class ReportViewModel: ObservableObject {
     @Published private(set) var report: RideReport = .empty
+    @Published private(set) var suggestedCourses: [SuggestedCourse] = []
     @Published private(set) var isLoading = false
 
     private let localStore: LocalRideStore
@@ -21,5 +22,6 @@ final class ReportViewModel: ObservableObject {
 
         let rides = (try? await localStore.loadRides()) ?? []
         report = RideStatisticsCalculator.report(for: rides)
+        suggestedCourses = CourseSuggester.suggest(from: rides)
     }
 }

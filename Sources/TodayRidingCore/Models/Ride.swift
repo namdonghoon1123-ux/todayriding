@@ -2,6 +2,7 @@ import Foundation
 
 public struct Ride: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
+    public var userID: UUID?
     public var title: String?
     public let startedAt: Date
     public var endedAt: Date?
@@ -19,6 +20,7 @@ public struct Ride: Codable, Identifiable, Equatable, Sendable {
 
     public init(
         id: UUID = UUID(),
+        userID: UUID? = nil,
         title: String? = nil,
         startedAt: Date,
         endedAt: Date? = nil,
@@ -35,6 +37,7 @@ public struct Ride: Codable, Identifiable, Equatable, Sendable {
         syncStatus: RideSyncStatus = .localOnly
     ) {
         self.id = id
+        self.userID = userID
         self.title = title
         self.startedAt = startedAt
         self.endedAt = endedAt

@@ -123,6 +123,8 @@ final class RideTrackingViewModel: ObservableObject {
             try? await localStore.saveRide(ride)
         }
 
+        await HealthKitWorkoutRecorder.save(ride: ride)
+
         return RideSummary(ride: ride, points: points)
     }
 
