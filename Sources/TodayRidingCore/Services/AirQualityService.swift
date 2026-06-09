@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public protocol AirQualityService: Sendable {
     func currentAirQuality() async throws -> AirQualitySnapshot
