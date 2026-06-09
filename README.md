@@ -121,7 +121,53 @@ CI 통과 = 화면 외 모든 로직이 정상.
 | `TODAYRIDING_AIRKOREA_API_KEY` | 에어코리아 API 키 | Mock 미세먼지 데이터 사용 |
 | `TODAYRIDING_AIRKOREA_STATION` | (선택) 고정 측정소명 | 좌표 기반 자동 조회 |
 
-Supabase 테이블은 `supabase/schema.sql` 기준으로 생성한다.
+```text
+TodayRidingValidation passed
+```
+
+## Supabase 설정 (멀티 사용자)
+
+오늘탈까는 **Supabase Auth 이메일/패스워드 로그인**을 통해 여러 사용자가 한 프로젝트를 공유할 수 있다. 각자 자기 라이딩만 보고/쓸 수 있도록 PostgreSQL **Row Level Security**가 적용된다.
+
+### 1. 스키마 적용
+
+Supabase 대시보드 → SQL Editor에 `supabase/schema.sql` 전체를 붙여넣고 Run.
+
+생성/적용 내역:
+- `rides`, `ride_points`, `ride_photos` 세 테이블 모두 `user_id uuid not null references auth.users(id) on delete cascade`
+- 세 테이블 `enable row level security` + `auth.uid() = user_id` 정책
+
+### 2. Build Settings 키 주입
+
+Xcode `TodayRiding` target → Build Settings에:
+
+- `TODAYRIDING_SUPABASE_URL`: 예 `https://xxxx.supabase.co`
+- `TODAYRIDING_SUPABASE_ANON_KEY`: **publishable** key (절대 secret key 아님)
+
+키는 Git에 커밋하지 않는다. **service_role secret key는 iOS 앱에 절대 넣지 말 것** — RLS를 우회한다.
+
+### 3. 사용자 추가
+
+앱 첫 실행 시 회원가입 화면이 뜬다. 함께 쓸 두 분이 각자 이메일/비밀번호로 가입하면 끝.
+
+Supabase 대시보드 → Authentication → Users 에서 가입 현황을 볼 수 있다.
+
+### 4. 동작
+
+- 로그인 안 한 상태: 라이딩은 **로컬에만** 저장되고 `pending` 유지
+- 로그인 후: 라이딩 종료 시 Supabase REST API로 `rides`, `ride_points`에 본인 user_id로 업로드
+- 토큰 만료 60초 전 자동 갱신, 갱신 실패 시 로그아웃되고 다음 로그인까지 로컬 큐에 누적
+- 앱 재실행 시 Keychain의 세션 자동 복원 + pending 라이딩 자동 재업로드
+
+## 날씨 / 미세먼지 설정
+
+data.go.kr 일반 인증키(Decoding)를 Build Settings에 주입한다. 자세한 내용은 `docs/xcode-setup.md` 참고.
+
+- `TODAYRIDING_KMA_API_KEY`: 기상청 단기예보 조회서비스 키
+- `TODAYRIDING_AIRKOREA_API_KEY`: 에어코리아 대기오염정보 키
+- `TODAYRIDING_AIRKOREA_STATION`: (선택) 고정 측정소명
+
+키가 없으면 Mock 데이터로 동작한다.
 
 ## 문서
 

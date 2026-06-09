@@ -1,5 +1,17 @@
 # TODO
 
+## 멀티 사용자 (Supabase Auth)
+
+- [x] `supabase/schema.sql` — user_id NOT NULL + RLS 정책 (rides/ride_points/ride_photos)
+- [x] `SupabaseAuthService` (signUp/signIn/refresh/signOut REST) + `AuthSession` 모델
+- [x] `InMemoryAuthSessionStore` (Linux/CI) + `KeychainAuthSessionStore` (iOS)
+- [x] `AuthStateController` — bootstrap·자동 토큰 갱신·로그인/로그아웃
+- [x] `AuthView` — 이메일/패스워드 회원가입·로그인 SwiftUI
+- [x] `RootView` 분기 (미로그인 → AuthView, 로그인 → 메인 흐름)
+- [x] `RideSyncService` Bearer JWT + user_id 자동 주입
+- [x] 홈 화면 로그아웃 버튼
+- [x] XCTest (AuthSession 만료/Codable, InMemoryAuthSessionStore, NoopSupabaseAuthService)
+
 ## 1차 MVP 후속
 
 ### 코드 구현 완료 (실기기/실키 검증 필요)
@@ -21,7 +33,9 @@
 
 ### 실기기 / Xcode 검증 대기
 
-- [ ] Supabase 프로젝트 생성 후 URL/anon key 주입 및 실기기 업로드 테스트
+- [ ] Supabase 프로젝트 SQL Editor에 `supabase/schema.sql` 적용 (RLS 포함)
+- [ ] Xcode Build Settings에 `TODAYRIDING_SUPABASE_URL` / `TODAYRIDING_SUPABASE_ANON_KEY` 주입
+- [ ] 두 명 회원가입 → 각자 라이딩 → Supabase Table Editor에서 user_id별로 row 분리 확인
 - [ ] 기상청/에어코리아 실제 키 주입 후 라이브 응답 검증
 - [ ] 실기기 GPS 기록 테스트 (홈 위치 권한 + 라이딩 트래킹)
 - [ ] 사진 저장 권한 실제 기기 테스트

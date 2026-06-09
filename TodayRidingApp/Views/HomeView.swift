@@ -6,9 +6,12 @@ struct HomeView: View {
     @AppStorage(HealthKitWorkoutRecorder.isEnabledDefaultsKey)
     private var healthKitEnabled = false
     @State private var healthKitToast: String?
+    @State private var presentedDetail: MetricDetail?
     let onStartRide: () -> Void
     let onShowHistory: () -> Void
     let onShowReport: () -> Void
+    var onShowCourses: (() -> Void)? = nil
+    var onSignOut: (() -> Void)? = nil
 
     var body: some View {
         ScrollView {
@@ -21,7 +24,6 @@ struct HomeView: View {
                     scoreHeader(recommendation)
                     messageRow(recommendation.message)
                     metricGrid(weather: weather, airQuality: airQuality)
-                    sunsetRow(weather)
                     if let advice = viewModel.coachAdvice {
                         coachCard(advice)
                     }
@@ -59,6 +61,9 @@ struct HomeView: View {
         } message: {
             Text(healthKitToast ?? "")
         }
+        .sheet(item: $presentedDetail) { detail in
+            MetricDetailSheet(detail: detail)
+        }
     }
 
     private var header: some View {
@@ -80,6 +85,17 @@ struct HomeView: View {
             }
             .accessibilityLabel(healthKitEnabled ? "건강 앱 저장 끄기" : "건강 앱 저장 켜기")
 
+            if let onShowCourses {
+                Button(action: onShowCourses) {
+                    Image(systemName: "map.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(AppTheme.brand)
+                        .frame(width: 40, height: 40)
+                        .background(AppTheme.surface2, in: Circle())
+                }
+                .accessibilityLabel("코스 짜기")
+            }
+
             Button(action: onShowReport) {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 16, weight: .bold))
@@ -88,6 +104,17 @@ struct HomeView: View {
                     .background(AppTheme.surface2, in: Circle())
             }
             .accessibilityLabel("리포트 보기")
+
+            if let onSignOut {
+                Button(action: onSignOut) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .frame(width: 40, height: 40)
+                        .background(AppTheme.surface2, in: Circle())
+                }
+                .accessibilityLabel("로그아웃")
+            }
 
             Button(action: onShowHistory) {
                 Image(systemName: "clock.arrow.circlepath")
@@ -153,50 +180,50 @@ struct HomeView: View {
 
     private func metricGrid(weather: WeatherSnapshot, airQuality: AirQualitySnapshot) -> some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            MetricChip(
-                icon: "thermometer.medium",
-                title: "기온",
-                value: String(format: "%.0f", weather.temperatureCelsius),
-                unit: "도"
-            )
-            MetricChip(
-                icon: "wind",
-                title: "바람",
-                value: String(format: "%.1f", weather.windSpeedMps),
-                unit: "m/s"
-            )
-            MetricChip(
-                icon: "cloud.rain.fill",
-                title: "강수",
-                value: "\(weather.precipitationProbabilityPercent)",
-                unit: "%"
-            )
-            MetricChip(
-                icon: "aqi.medium",
-                title: "초미세",
-                value: "\(airQuality.pm25)",
-                unit: "PM2.5"
-            )
-            MetricChip(
-                icon: "humidity.fill",
-                title: "습도",
-                value: "\(weather.humidityPercent)",
-                unit: "%"
-            )
-            MetricChip(
-                icon: "sun.max.fill",
-                title: "하늘",
-                value: weather.skyCondition,
-                unit: weather.precipitationType.label
-            )
+            metricButton(detail: MetricDetail.temperature(weather)) {
+                MetricChip(icon: "thermometer.medium", title: "기온",
+                           value: String(format: "%.0f", weather.temperatureCelsius), unit: "도")
+            }
+            metricButton(detail: MetricDetail.wind(weather)) {
+                MetricChip(icon: "wind", title: "바람",
+                           value: String(format: "%.1f", weather.windSpeedMps), unit: "m/s")
+            }
+            metricButton(detail: MetricDetail.precipitation(weather)) {
+                MetricChip(icon: "cloud.rain.fill", title: "강수",
+                           value: "\(weather.precipitationProbabilityPercent)", unit: "%")
+            }
+            metricButton(detail: MetricDetail.pm25(airQuality)) {
+                MetricChip(icon: "aqi.medium", title: "초미세",
+                           value: "\(airQuality.pm25)", unit: "PM2.5")
+            }
+            metricButton(detail: MetricDetail.humidity(weather)) {
+                MetricChip(icon: "humidity.fill", title: "습도",
+                           value: "\(weather.humidityPercent)", unit: "%")
+            }
+            metricButton(detail: MetricDetail.sky(weather)) {
+                MetricChip(icon: "sun.max.fill", title: "하늘",
+                           value: weather.skyCondition, unit: weather.precipitationType.label)
+            }
+            if let uv = viewModel.uvIndex {
+                metricButton(detail: MetricDetail.uvIndex(uv)) {
+                    MetricChip(icon: "sun.max.trianglebadge.exclamationmark.fill",
+                               title: "자외선", value: "\(uv.value)", unit: uv.category.label)
+                }
+            }
+            metricButton(detail: MetricDetail.sunset(weather)) {
+                MetricChip(icon: "sunset.fill", title: "일몰",
+                           value: AppFormatters.time(weather.sunsetAt), unit: "KST")
+            }
         }
     }
 
-    private func sunsetRow(_ weather: WeatherSnapshot) -> some View {
-        Label("일몰 \(AppFormatters.time(weather.sunsetAt)) · 야간 라이트 권장", systemImage: "sunset.fill")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(AppTheme.textTertiary)
-            .tint(AppTheme.ok)
+    private func metricButton<Content: View>(detail: MetricDetail, @ViewBuilder content: () -> Content) -> some View {
+        Button {
+            presentedDetail = detail
+        } label: {
+            content()
+        }
+        .buttonStyle(.plain)
     }
 
     private func coachCard(_ advice: RidingCoachAdvice) -> some View {
