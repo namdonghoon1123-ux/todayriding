@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public protocol SupabaseService: Sendable {
     func uploadRide(_ ride: Ride, points: [RidePoint]) async throws

@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public protocol WeatherService: Sendable {
     func currentWeather() async throws -> WeatherSnapshot
